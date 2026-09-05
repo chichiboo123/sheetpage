@@ -85,6 +85,7 @@ export function HomePage() {
         onCommitCell={actions.setCell}
         onUndo={actions.undo}
         onRedo={actions.redo}
+        onReset={actions.reset}
       />
     )
   }

@@ -64,6 +64,7 @@ export function SharePage({ shareId }: { shareId: string }) {
       onCommitCell={() => undefined}
       onUndo={() => undefined}
       onRedo={() => undefined}
+      onReset={() => navigate('/')}
     />
   )
 }

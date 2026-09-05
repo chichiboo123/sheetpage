@@ -1,4 +1,3 @@
-import { Link } from 'wouter'
 import { Logo } from './Logo'
 import { Button } from './ui/Button'
 import { Icon } from './ui/Icon'
@@ -22,6 +21,8 @@ interface ToolbarProps {
   onDownload: () => void
   onShare: () => void
   onUndo: () => void
+  /** Closes the workbook and returns to the start screen. */
+  onReset: () => void
 }
 
 export function Toolbar({
@@ -34,6 +35,7 @@ export function Toolbar({
   onDownload,
   onShare,
   onUndo,
+  onReset,
 }: ToolbarProps) {
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-b border-ink-200 bg-white px-3 sm:px-4">
@@ -46,10 +48,16 @@ export function Toolbar({
         <Icon name="menu" className="text-[21px]" />
       </button>
 
-      <Link href="/" aria-label="SheetPage 홈으로" className="shrink-0 rounded-md">
+      <button
+        type="button"
+        onClick={onReset}
+        aria-label="SheetPage 처음 화면으로"
+        title="처음 화면으로"
+        className="shrink-0 rounded-md px-1 py-1 transition-colors hover:bg-ink-100"
+      >
         <Logo markOnly className="sm:hidden" />
         <Logo className="hidden sm:inline-flex" />
-      </Link>
+      </button>
 
       <div className="mx-1 hidden h-5 w-px shrink-0 bg-ink-200 sm:block" />
 
@@ -75,6 +83,16 @@ export function Toolbar({
           )}
         </p>
       </div>
+
+      <button
+        type="button"
+        onClick={onReset}
+        aria-label="초기화"
+        title="초기화 — 현재 파일을 닫고 처음 화면으로"
+        className="grid h-9 w-9 shrink-0 place-items-center rounded-md text-ink-500 transition-colors hover:bg-ink-100 hover:text-ink-900"
+      >
+        <Icon name="restart_alt" className="text-[20px]" />
+      </button>
 
       {!readOnly && canUndo && (
         <button
