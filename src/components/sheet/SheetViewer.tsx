@@ -13,17 +13,37 @@ import { SheetReader } from './SheetReader'
 
 export type ViewMode = 'grid' | 'reader'
 
+export interface SheetNeighbour {
+  sheetId: string
+  sheetName: string
+}
+
 interface SheetViewerProps {
   sheet: Sheet
   readOnly: boolean
   onCommit: (r: number, c: number, input: string) => void
+  /** Position in the workbook, shown as "3 / 10" in the breadcrumb. */
+  position: { index: number; total: number }
+  previous: SheetNeighbour | null
+  next: SheetNeighbour | null
+  onNavigate: (sheetId: string) => void
+  onShowOverview: () => void
 }
 
 /**
  * One sheet, in whichever of the two readings the user wants: the grid for
  * working with cells, the reader for reading the content as a page.
  */
-export function SheetViewer({ sheet, readOnly, onCommit }: SheetViewerProps) {
+export function SheetViewer({
+  sheet,
+  readOnly,
+  onCommit,
+  position,
+  previous,
+  next,
+  onNavigate,
+  onShowOverview,
+}: SheetViewerProps) {
   const [mode, setMode] = useState<ViewMode>('grid')
   const [selection, setSelection] = useState<CellPosition | null>({ r: 0, c: 0 })
   const [valueDraft, setValueDraft] = useState<string | null>(null)
@@ -43,14 +63,55 @@ export function SheetViewer({ sheet, readOnly, onCommit }: SheetViewerProps) {
   return (
     <section className="flex min-h-0 min-w-0 flex-1 flex-col bg-white">
       <div className="flex h-11 shrink-0 items-center gap-2 border-b border-ink-200 bg-white px-3 sm:px-4">
-        <h2 className="truncate text-[13.5px] font-semibold text-ink-900" title={sheet.sheetName}>
-          {sheet.sheetName}
-        </h2>
-        <span className="hidden shrink-0 text-2xs tabular-nums text-ink-400 sm:inline">
+        <nav aria-label="현재 위치" className="flex min-w-0 items-center gap-1.5">
+          <button
+            type="button"
+            onClick={onShowOverview}
+            className="shrink-0 rounded px-1 py-0.5 text-[12.5px] text-ink-500 transition-colors hover:bg-ink-100 hover:text-ink-800"
+          >
+            전체 시트
+          </button>
+          <Icon name="chevron_right" className="shrink-0 text-[15px] text-ink-300" />
+          <h2
+            className="truncate text-[13.5px] font-semibold text-ink-900"
+            title={sheet.sheetName}
+            aria-current="page"
+          >
+            {sheet.sheetName}
+          </h2>
+        </nav>
+
+        <span className="hidden shrink-0 text-2xs tabular-nums text-ink-400 lg:inline">
           {sheet.rows.toLocaleString('ko-KR')}행 · {sheet.cols.toLocaleString('ko-KR')}열
         </span>
 
-        <div className="ml-auto flex shrink-0 items-center rounded-md border border-ink-200 p-0.5">
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            disabled={!previous}
+            onClick={() => previous && onNavigate(previous.sheetId)}
+            aria-label={previous ? `이전 시트: ${previous.sheetName}` : '이전 시트 없음'}
+            title={previous ? `이전 시트 · ${previous.sheetName}` : '첫 번째 시트입니다'}
+            className="grid h-7 w-7 place-items-center rounded text-ink-500 transition-colors hover:bg-ink-100 hover:text-ink-900 disabled:cursor-not-allowed disabled:text-ink-300 disabled:hover:bg-transparent"
+          >
+            <Icon name="chevron_left" className="text-[19px]" />
+          </button>
+          <span className="select-none text-2xs tabular-nums text-ink-400">
+            {position.index + 1} / {position.total}
+          </span>
+          <button
+            type="button"
+            disabled={!next}
+            onClick={() => next && onNavigate(next.sheetId)}
+            aria-label={next ? `다음 시트: ${next.sheetName}` : '다음 시트 없음'}
+            title={next ? `다음 시트 · ${next.sheetName}` : '마지막 시트입니다'}
+            className="grid h-7 w-7 place-items-center rounded text-ink-500 transition-colors hover:bg-ink-100 hover:text-ink-900 disabled:cursor-not-allowed disabled:text-ink-300 disabled:hover:bg-transparent"
+          >
+            <Icon name="chevron_right" className="text-[19px]" />
+          </button>
+        </div>
+
+        <div className="flex shrink-0 items-center rounded-md border border-ink-200 p-0.5">
           <ModeButton
             active={mode === 'grid'}
             onClick={() => setMode('grid')}

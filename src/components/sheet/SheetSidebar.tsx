@@ -6,6 +6,7 @@ interface SheetSidebarProps {
   workbook: Workbook
   activeSheetId: string | null
   onSelect: (sheetId: string) => void
+  onShowOverview: () => void
   collapsed: boolean
   onToggleCollapsed: () => void
 }
@@ -21,6 +22,7 @@ export function SheetSidebar({
   workbook,
   activeSheetId,
   onSelect,
+  onShowOverview,
   collapsed,
   onToggleCollapsed,
 }: SheetSidebarProps) {
@@ -46,6 +48,7 @@ export function SheetSidebar({
         workbook={workbook}
         activeSheetId={activeSheetId}
         onSelect={onSelect}
+        onShowOverview={onShowOverview}
         onCollapse={onToggleCollapsed}
       />
     </div>
@@ -56,10 +59,17 @@ interface SheetListProps {
   workbook: Workbook
   activeSheetId: string | null
   onSelect: (sheetId: string) => void
+  onShowOverview: () => void
   onCollapse?: () => void
 }
 
-export function SheetList({ workbook, activeSheetId, onSelect, onCollapse }: SheetListProps) {
+export function SheetList({
+  workbook,
+  activeSheetId,
+  onSelect,
+  onShowOverview,
+  onCollapse,
+}: SheetListProps) {
   const [query, setQuery] = useState('')
   const activeRef = useRef<HTMLButtonElement>(null)
 
@@ -113,6 +123,30 @@ export function SheetList({ workbook, activeSheetId, onSelect, onCollapse }: She
       </div>
 
       <nav aria-label="시트 목록" className="thin-scrollbar min-h-0 flex-1 overflow-y-auto p-2">
+        {/* While a search is running the list is a set of results, so the
+            navigation root would only be a non-matching row in the middle. */}
+        {query.trim() === '' && (
+        <>
+        <button
+          type="button"
+          onClick={onShowOverview}
+          aria-current={activeSheetId === null ? 'page' : undefined}
+          className={`mb-1 flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-[13.5px] transition-colors ${
+            activeSheetId === null
+              ? 'bg-brand-100 font-medium text-brand-900'
+              : 'text-ink-700 hover:bg-ink-100 hover:text-ink-900'
+          }`}
+        >
+          <Icon
+            name="grid_view"
+            className={`shrink-0 text-[18px] ${activeSheetId === null ? 'text-brand-600' : 'text-ink-400'}`}
+          />
+          <span className="min-w-0 flex-1 truncate">전체 시트</span>
+        </button>
+        <div className="mx-2.5 mb-1.5 border-t border-ink-100" />
+        </>
+        )}
+
         {matches.length === 0 ? (
           <p className="px-2 py-6 text-center text-[13px] text-ink-400">
             &lsquo;{query}&rsquo;와 일치하는 시트가 없습니다.

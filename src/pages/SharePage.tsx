@@ -61,6 +61,7 @@ export function SharePage({ shareId }: { shareId: string }) {
       edited={false}
       canUndo={false}
       onSelectSheet={actions.selectSheet}
+      onShowOverview={actions.showOverview}
       onCommitCell={() => undefined}
       onUndo={() => undefined}
       onRedo={() => undefined}

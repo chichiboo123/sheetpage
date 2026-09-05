@@ -53,6 +53,7 @@ type Action =
   | { type: 'failed'; error: WorkbookError }
   | { type: 'reset' }
   | { type: 'selectSheet'; sheetId: string }
+  | { type: 'showOverview' }
   | { type: 'setCell'; sheetId: string; r: number; c: number; input: string }
   | { type: 'undo' }
   | { type: 'redo' }
@@ -145,6 +146,10 @@ function reducer(state: WorkbookState, action: Action): WorkbookState {
         ? state
         : { ...state, activeSheetId: action.sheetId }
 
+    // A null active sheet is the workbook's own index page, not an error state.
+    case 'showOverview':
+      return state.activeSheetId === null ? state : { ...state, activeSheetId: null }
+
     case 'setCell': {
       if (!state.workbook || state.readOnly) return state
       const sheet = state.workbook.sheets.find((s) => s.sheetId === action.sheetId)
@@ -216,6 +221,7 @@ export function useWorkbookStore() {
       failed: (error: WorkbookError) => dispatch({ type: 'failed', error }),
       reset: () => dispatch({ type: 'reset' }),
       selectSheet: (sheetId: string) => dispatch({ type: 'selectSheet', sheetId }),
+      showOverview: () => dispatch({ type: 'showOverview' }),
       setCell: (sheetId: string, r: number, c: number, input: string) =>
         dispatch({ type: 'setCell', sheetId, r, c, input }),
       undo: () => dispatch({ type: 'undo' }),

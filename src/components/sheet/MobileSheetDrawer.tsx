@@ -8,6 +8,7 @@ interface MobileSheetDrawerProps {
   workbook: Workbook
   activeSheetId: string | null
   onSelect: (sheetId: string) => void
+  onShowOverview: () => void
   onClose: () => void
 }
 
@@ -21,6 +22,7 @@ export function MobileSheetDrawer({
   workbook,
   activeSheetId,
   onSelect,
+  onShowOverview,
   onClose,
 }: MobileSheetDrawerProps) {
   useEffect(() => {
@@ -59,10 +61,18 @@ export function MobileSheetDrawer({
             <Icon name="close" className="text-[20px]" />
           </button>
         </div>
-        <SheetList workbook={workbook} activeSheetId={activeSheetId} onSelect={(sheetId) => {
-          onSelect(sheetId)
-          onClose()
-        }} />
+        <SheetList
+          workbook={workbook}
+          activeSheetId={activeSheetId}
+          onSelect={(sheetId) => {
+            onSelect(sheetId)
+            onClose()
+          }}
+          onShowOverview={() => {
+            onShowOverview()
+            onClose()
+          }}
+        />
       </div>
     </div>
   )

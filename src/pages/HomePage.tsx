@@ -82,6 +82,7 @@ export function HomePage() {
         edited={state.editCount > 0}
         canUndo={canUndo}
         onSelectSheet={actions.selectSheet}
+        onShowOverview={actions.showOverview}
         onCommitCell={actions.setCell}
         onUndo={actions.undo}
         onRedo={actions.redo}
