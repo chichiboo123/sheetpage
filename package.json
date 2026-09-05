@@ -1,0 +1,42 @@
+{
+  "name": "sheetpage",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "check:workbook": "esbuild scripts/roundtrip-check.ts --bundle --platform=node --format=cjs --outfile=node_modules/.tmp/roundtrip-check.cjs --log-level=error && node node_modules/.tmp/roundtrip-check.cjs",
+    "check:functions": "esbuild scripts/functions-check.ts --bundle --platform=node --format=esm --outfile=node_modules/.tmp/functions-check.mjs --alias:@netlify/blobs=./scripts/stubs/netlify-blobs.ts --log-level=error && node node_modules/.tmp/functions-check.mjs",
+    "check": "npm run check:workbook && npm run check:functions",
+    "typecheck": "tsc -b",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@tanstack/react-virtual": "^3.13.12",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "wouter": "^3.9.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@netlify/blobs": "^8.1.0",
+    "@netlify/functions": "^3.0.3",
+    "@types/node": "^24.12.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.0",
+    "autoprefixer": "^10.4.27",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.4.0",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^3.4.19",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.56.1",
+    "vite": "^8.0.0"
+  }
+}
