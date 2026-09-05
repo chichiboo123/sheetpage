@@ -88,22 +88,25 @@ npm run build            # 타입 검사 + 프로덕션 빌드
 
 ## 배포
 
-`main`에 push하면 `.github/workflows/deploy.yml`이 Netlify로 배포합니다.
-사이트와 `netlify/functions`가 함께 올라가야 하므로 정적 호스팅만으로는
-공유 · Google Sheets 기능이 동작하지 않습니다.
+Netlify가 GitHub 저장소에 연결되어 있어, production 브랜치에 push하면 자동으로
+빌드·배포합니다. 빌드 설정은 `netlify.toml`에서 읽습니다.
 
-배포는 `netlify-cli`가 직접 빌드까지 수행합니다(`deploy --prod`). CLI v27부터
-`--build`는 기본값이라 워크플로에 따로 적지 않습니다.
-
-필요한 GitHub Actions Secret 두 개:
-
-| Secret | 값 |
-| --- | --- |
-| `NETLIFY_AUTH_TOKEN` | Netlify 개인 액세스 토큰 |
-| `NETLIFY_SITE_ID` | Netlify 사이트의 API ID |
+사이트와 `netlify/functions`가 함께 올라가야 하므로, 정적 호스팅만으로는
+공유 · Google Sheets 기능이 동작하지 않습니다. Excel 업로드 · 편집 · 다운로드는
+전부 브라우저 안에서 처리되므로 정적 환경에서도 동작합니다.
 
 공유 Snapshot은 **Netlify Blobs**에 저장됩니다. 별도 데이터베이스나 키 설정이
 없고, 배포된 사이트에서 자동으로 활성화됩니다.
+
+`.github/workflows/ci.yml`은 배포와 무관하게 lint · 검증 · 빌드를 확인합니다.
+
+### 요청 본문 인코딩
+
+공유 Snapshot POST 본문은 항상 **텍스트**입니다 — 작으면 JSON 그대로, 크면
+gzip을 base64로 인코딩해 보냅니다. 서버는 헤더가 아니라 첫 글자로 형태를
+판별합니다. 원시 gzip 바이트를 보내면 호스팅 계층이 본문을 UTF-8 텍스트로
+디코딩하는 순간 깨지기 때문이고, 실제로 그 문제로 공유 링크 생성이 실패한 적이
+있습니다.
 
 ---
 

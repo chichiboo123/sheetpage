@@ -63,8 +63,7 @@ async function shareTests() {
   const secondBody = (await second.json()) as { id: string }
   check('ids are distinct', secondBody.id !== createdBody.id, true)
 
-  // Larger workbooks are sent gzip-compressed, which is what keeps a big
-  // snapshot inside the platform's request size limit.
+  // Larger workbooks are sent gzip-compressed, encoded as base64 text.
   const bigWorkbook = {
     ...workbook,
     sheets: [
@@ -78,26 +77,62 @@ async function shareTests() {
     ],
   }
   const json = JSON.stringify({ workbook: bigWorkbook })
-  const gzip = await new Response(
-    new Blob([json]).stream().pipeThrough(new CompressionStream('gzip')),
-  ).arrayBuffer()
+  const gzipBytes = new Uint8Array(
+    await new Response(
+      new Blob([json]).stream().pipeThrough(new CompressionStream('gzip')),
+    ).arrayBuffer(),
+  )
+  const base64 = Buffer.from(gzipBytes).toString('base64')
+
+  // The regression that broke share links in production: a hosting platform
+  // decodes a text-typed request body as UTF-8. Raw gzip bytes are destroyed by
+  // that round trip; base64 text passes through untouched. Sending base64 is
+  // what makes the compressed path safe on any host.
+  const utf8RoundTrip = (bytes: Uint8Array) =>
+    new TextEncoder().encode(new TextDecoder().decode(bytes))
+  check('raw gzip bytes do not survive a text round trip', utf8RoundTrip(gzipBytes).length === gzipBytes.length, false)
+  check(
+    'base64 survives a text round trip',
+    new TextDecoder().decode(utf8RoundTrip(new TextEncoder().encode(base64))),
+    base64,
+  )
+
   const compressed = await shareHandler(
     new Request('https://sheetpage.test/api/share', {
       method: 'POST',
-      headers: { 'x-sheetpage-encoding': 'gzip' },
-      body: gzip,
+      headers: { 'content-type': 'text/plain;charset=UTF-8' },
+      body: base64,
     }),
   )
-  check('gzip body accepted', compressed.status, 201)
-  check('gzip shrinks a real snapshot by >5x', gzip.byteLength * 5 < json.length, true)
+  check('base64 gzip body accepted', compressed.status, 201)
+  const ratio = json.length / base64.length
+  console.log(`      (snapshot ${json.length} B -> ${base64.length} B on the wire, ${ratio.toFixed(1)}x)`)
+  check('base64 gzip meaningfully shrinks a real snapshot', ratio > 3, true)
 
   const compressedId = ((await compressed.json()) as { id: string }).id
   const decompressed = await shareHandler(
     new Request(`https://sheetpage.test/api/share?id=${compressedId}`),
   )
-  const bigSnapshot = (await decompressed.json()) as { workbook: { sheets: { cells: Record<string, unknown> }[] } }
-  check('gzip round trip keeps every cell', Object.keys(bigSnapshot.workbook.sheets[0].cells).length, 2000)
-  check('gzip round trip keeps korean values', bigSnapshot.workbook.sheets[0].cells['1999:0'], { v: '항목 1999', t: 's' })
+  const bigSnapshot = (await decompressed.json()) as {
+    workbook: { sheets: { cells: Record<string, unknown> }[] }
+  }
+  check('compressed round trip keeps every cell', Object.keys(bigSnapshot.workbook.sheets[0].cells).length, 2000)
+  check('compressed round trip keeps korean values', bigSnapshot.workbook.sheets[0].cells['1999:0'], { v: '항목 1999', t: 's' })
+
+  // The body shape is detected from its content, so a stripped header is fine.
+  const plainNoHeader = await shareHandler(
+    new Request('https://sheetpage.test/api/share', {
+      method: 'POST',
+      headers: { 'content-type': 'text/plain;charset=UTF-8' },
+      body: JSON.stringify({ workbook }),
+    }),
+  )
+  check('plain json body accepted as text/plain', plainNoHeader.status, 201)
+
+  const brokenBase64 = await shareHandler(
+    new Request('https://sheetpage.test/api/share', { method: 'POST', body: 'AAAAnotgzipAAAA' }),
+  )
+  check('undecodable body returns 400, not a crash', brokenBase64.status, 400)
 
   const missing = await shareHandler(new Request('https://sheetpage.test/api/share?id=zzzzzzzzzzz'))
   check('unknown id returns 404', missing.status, 404)

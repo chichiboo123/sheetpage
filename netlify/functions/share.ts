@@ -140,11 +140,28 @@ async function read(request: Request, store: Store): Promise<Response> {
   })
 }
 
-/** Accepts a plain JSON body, or a gzip-compressed one for larger workbooks. */
+/**
+ * Accepts a plain JSON body, or base64-encoded gzip for larger workbooks.
+ *
+ * The compressed form travels as base64 *text* rather than as raw bytes on
+ * purpose: a request body is only reliably preserved end to end when every hop
+ * can treat it as text. Raw gzip sent under a text-ish content type gets
+ * decoded as UTF-8 somewhere along the way and arrives corrupted.
+ *
+ * The shape is detected from the content rather than from a header, so a
+ * request survives any hop that drops custom headers.
+ */
 async function readBody(request: Request): Promise<string> {
-  const encoding = request.headers.get('x-sheetpage-encoding')
-  if (encoding !== 'gzip' || !request.body) return request.text()
+  const raw = (await request.text()).trim()
+  if (raw === '' || raw.startsWith('{')) return raw
+  return gunzipBase64(raw)
+}
 
-  const stream = request.body.pipeThrough(new DecompressionStream('gzip'))
+async function gunzipBase64(value: string): Promise<string> {
+  const binary = atob(value)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+
+  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))
   return new Response(stream).text()
 }

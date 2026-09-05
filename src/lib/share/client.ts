@@ -41,14 +41,22 @@ export interface SharedSnapshot {
   workbook: Workbook
 }
 
-export async function createShare(workbook: Workbook): Promise<ShareResult> {
-  const body = JSON.stringify({ workbook })
+/** Mirrors the server's cap, so an oversized workbook fails before uploading. */
+const MAX_SNAPSHOT_BYTES = 5 * 1024 * 1024
 
-  let response: Response
-  try {
-    response = await fetch('/api/share', await buildRequestInit(body))
-  } catch {
-    throw new ShareError('network', MESSAGES.network)
+export async function createShare(workbook: Workbook): Promise<ShareResult> {
+  const json = JSON.stringify({ workbook })
+  if (json.length > MAX_SNAPSHOT_BYTES) {
+    throw new ShareError('too-large', MESSAGES['too-large'])
+  }
+
+  const encoded = await encodeBody(json)
+
+  let response = await post(encoded)
+  // If the server could not read the compressed form, one plain retry is
+  // cheaper than failing the user outright.
+  if (response.status === 400 && encoded !== json) {
+    response = await post(json)
   }
 
   if (!response.ok) throw new ShareError(...(await readError(response)))
@@ -58,6 +66,20 @@ export async function createShare(workbook: Workbook): Promise<ShareResult> {
     id: result.id,
     url: `${window.location.origin}/s/${result.id}`,
     expiresAt: result.expiresAt,
+  }
+}
+
+async function post(body: string): Promise<Response> {
+  try {
+    return await fetch('/api/share', {
+      method: 'POST',
+      // Plain text both ways: the server tells JSON from base64 gzip by looking
+      // at the first character, and no hop has to handle a binary body.
+      headers: { 'content-type': 'text/plain;charset=UTF-8' },
+      body,
+    })
+  } catch {
+    throw new ShareError('network', MESSAGES.network)
   }
 }
 
@@ -74,44 +96,47 @@ export async function fetchShare(id: string): Promise<SharedSnapshot> {
 }
 
 /**
- * Gzip the payload when the browser can, which keeps a large workbook well
- * under the platform's request size limit. Browsers without CompressionStream
- * simply send the JSON as-is.
+ * Gzip the payload when the browser can, encoded as base64 so the request body
+ * stays plain text. Anything that fails falls back to sending the JSON as-is.
  */
-async function buildRequestInit(body: string): Promise<RequestInit> {
-  if (typeof CompressionStream === 'undefined') {
-    return {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body,
-    }
-  }
+async function encodeBody(json: string): Promise<string> {
+  if (typeof CompressionStream === 'undefined' || json.length < 64 * 1024) return json
 
-  const compressed = await new Response(
-    new Blob([body]).stream().pipeThrough(new CompressionStream('gzip')),
-  ).arrayBuffer()
-
-  return {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-sheetpage-encoding': 'gzip',
-    },
-    body: compressed,
+  try {
+    const compressed = await new Response(
+      new Blob([json]).stream().pipeThrough(new CompressionStream('gzip')),
+    ).arrayBuffer()
+    return toBase64(new Uint8Array(compressed))
+  } catch {
+    return json
   }
 }
 
+function toBase64(bytes: Uint8Array): string {
+  // Chunked because spreading a multi-megabyte array into fromCharCode
+  // overflows the call stack.
+  const CHUNK = 0x8000
+  let binary = ''
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK))
+  }
+  return btoa(binary)
+}
+
 async function readError(response: Response): Promise<[ShareErrorCode, string]> {
+  // The server explains itself; showing that beats a generic failure notice.
+  let detail: string | undefined
   try {
     const body = (await response.json()) as { code?: string; message?: string }
+    if (typeof body.message === 'string' && body.message !== '') detail = body.message
     if (body.code && body.code in MESSAGES) {
-      return [body.code as ShareErrorCode, body.message || MESSAGES[body.code as ShareErrorCode]]
+      return [body.code as ShareErrorCode, detail ?? MESSAGES[body.code as ShareErrorCode]]
     }
   } catch {
     // Fall through to the status-based mapping below.
   }
-  if (response.status === 404) return ['not-found', MESSAGES['not-found']]
-  if (response.status === 410) return ['expired', MESSAGES.expired]
-  if (response.status === 413) return ['too-large', MESSAGES['too-large']]
-  return ['unknown', MESSAGES.unknown]
+  if (response.status === 404) return ['not-found', detail ?? MESSAGES['not-found']]
+  if (response.status === 410) return ['expired', detail ?? MESSAGES.expired]
+  if (response.status === 413) return ['too-large', detail ?? MESSAGES['too-large']]
+  return ['unknown', detail ?? MESSAGES.unknown]
 }
