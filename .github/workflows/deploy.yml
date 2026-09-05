@@ -33,8 +33,9 @@ jobs:
 
       # The site and netlify/functions deploy together: /api/gsheets and
       # /api/share are functions, and a static-only host cannot serve them.
+      # The CLI runs the build itself, so there is no separate build step here.
       - name: Deploy site and functions
-        run: npx --yes netlify-cli@23.10.1 deploy --build --prod
+        run: npx --yes netlify-cli@27.5.0 deploy --prod
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}

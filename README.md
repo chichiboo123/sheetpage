@@ -92,6 +92,9 @@ npm run build            # 타입 검사 + 프로덕션 빌드
 사이트와 `netlify/functions`가 함께 올라가야 하므로 정적 호스팅만으로는
 공유 · Google Sheets 기능이 동작하지 않습니다.
 
+배포는 `netlify-cli`가 직접 빌드까지 수행합니다(`deploy --prod`). CLI v27부터
+`--build`는 기본값이라 워크플로에 따로 적지 않습니다.
+
 필요한 GitHub Actions Secret 두 개:
 
 | Secret | 값 |
