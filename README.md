@@ -109,8 +109,26 @@ npm run build            # 타입 검사 + 프로덕션 빌드
 
 ## 배포
 
+**https://sheetpage.chichiboo.link**
+
 Netlify가 GitHub 저장소에 연결되어 있어, production 브랜치에 push하면 자동으로
 빌드·배포합니다. 빌드 설정은 `netlify.toml`에서 읽습니다.
+
+### 커스텀 도메인
+
+`chichiboo.link`의 DNS는 Cloudflare에서 관리합니다. 서브도메인 레코드:
+
+| 유형 | 이름 | 값 | 프록시 |
+| --- | --- | --- | --- |
+| CNAME | `sheetpage` | `sheet-page.netlify.app` | **DNS only (회색 구름)** |
+
+프록시를 켜면(주황 구름) Netlify의 Let's Encrypt 인증서 발급이 실패하고, Cloudflare
+SSL 모드가 Flexible일 경우 리디렉션 루프가 생깁니다. Netlify가 이미 자체 CDN과
+TLS를 제공하므로 앞단에 프록시를 둘 이유도 없습니다.
+
+앱 코드에는 도메인이 하드코딩되어 있지 않습니다. 공유 링크는
+`window.location.origin`으로 만들어지므로 어느 도메인에서든 그 도메인 기준으로
+생성됩니다. `index.html`의 canonical · OG 태그만 도메인을 명시합니다.
 
 사이트와 `netlify/functions`가 함께 올라가야 하므로, 정적 호스팅만으로는
 공유 · Google Sheets 기능이 동작하지 않습니다. Excel 업로드 · 편집 · 다운로드는

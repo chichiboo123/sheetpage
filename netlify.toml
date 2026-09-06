@@ -20,6 +20,14 @@
   status = 200
   force = true
 
+# A share snapshot is somebody's spreadsheet reached by an unguessable link.
+# Keeping it out of search indexes stops one shared link from turning into a
+# public, searchable copy of their data.
+[[headers]]
+  for = "/s/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
 # SPA fallback — must be last so /s/:id reaches the client router.
 [[redirects]]
   from = "/*"
