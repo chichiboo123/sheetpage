@@ -59,6 +59,7 @@ type Action =
   | { type: 'undo' }
   | { type: 'redo' }
   | { type: 'rename'; title: string }
+  | { type: 'setSheetIcon'; sheetId: string; icon: string | undefined }
 
 export const initialWorkbookState: WorkbookState = {
   workbook: null,
@@ -206,6 +207,19 @@ function reducer(state: WorkbookState, action: Action): WorkbookState {
       return entry ? applyEntry(state, entry, 'redo') : state
     }
 
+    // An icon is SheetPage's own decoration, not part of the file, so it must
+    // not mark the workbook 수정됨 — the downloaded .xlsx would look unchanged
+    // and the badge would be a lie.
+    case 'setSheetIcon': {
+      if (!state.workbook || state.readOnly) return state
+      const sheet = state.workbook.sheets.find((s) => s.sheetId === action.sheetId)
+      if (!sheet || sheet.metadata.icon === action.icon) return state
+      const metadata = { ...sheet.metadata }
+      if (action.icon) metadata.icon = action.icon
+      else delete metadata.icon
+      return { ...state, workbook: replaceSheet(state.workbook, { ...sheet, metadata }) }
+    }
+
     case 'rename':
       return state.workbook ? { ...state, workbook: { ...state.workbook, title: action.title } } : state
 
@@ -245,6 +259,8 @@ export function useWorkbookStore() {
       undo: () => dispatch({ type: 'undo' }),
       redo: () => dispatch({ type: 'redo' }),
       rename: (title: string) => dispatch({ type: 'rename', title }),
+      setSheetIcon: (sheetId: string, icon: string | undefined) =>
+        dispatch({ type: 'setSheetIcon', sheetId, icon }),
     }),
     [],
   )

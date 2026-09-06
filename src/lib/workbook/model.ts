@@ -40,6 +40,12 @@ export interface SheetMetadata {
   frozen?: { r: number; c: number }
   /** True when the source marked the sheet hidden. Still navigable here. */
   hidden?: boolean
+  /**
+   * Emoji the user picked for this sheet. SheetPage's own layer: a .xlsx has
+   * nowhere to put it, so the exporter ignores it, while the session store and
+   * share snapshots carry it because they keep the whole model.
+   */
+  icon?: string
 }
 
 export interface Sheet {
@@ -212,6 +218,56 @@ export function detectHeaderRow(sheet: Sheet): boolean {
   }
   if (filled < Math.max(2, Math.ceil(sheet.cols * 0.5))) return false
   return textual / filled >= 0.7
+}
+
+/**
+ * Column names from the header row, for the overview's chips.
+ *
+ * Returns nothing when no header row was detected — inventing labels like "A"
+ * and "B" would fill the card with noise that says nothing about the sheet.
+ */
+export function columnNames(
+  sheet: Sheet,
+  headerRow: boolean,
+  limit = 4,
+): { names: string[]; extra: number } {
+  if (!headerRow) return { names: [], extra: 0 }
+
+  // A cell merged across several columns on the header row is a document title
+  // ("2026학년도 평가계획"), not a column name. Listing it as one would put the
+  // sheet's title in the middle of its column tags.
+  const spanning = new Set<number>()
+  for (const range of sheet.merges) {
+    if (range.s.r !== 0 || range.e.c === range.s.c) continue
+    for (let c = range.s.c; c <= range.e.c; c++) spanning.add(c)
+  }
+
+  const all: string[] = []
+  for (let c = 0; c < sheet.cols; c++) {
+    if (spanning.has(c)) continue
+    const label = displayValue(getCell(sheet, 0, c)).trim()
+    if (label !== '') all.push(label)
+  }
+  return { names: all.slice(0, limit), extra: Math.max(0, all.length - limit) }
+}
+
+/** Roughly how much of the first data row fits on a card's summary line. */
+const SUMMARY_BUDGET = 44
+
+/** A one-line taste of the sheet's contents, taken from its first data row. */
+export function sheetSummary(sheet: Sheet, headerRow: boolean): string {
+  const row = headerRow ? 1 : 0
+  if (row >= sheet.rows) return ''
+
+  const parts: string[] = []
+  let length = 0
+  for (let c = 0; c < sheet.cols && length < SUMMARY_BUDGET; c++) {
+    const text = displayValue(getCell(sheet, row, c)).trim()
+    if (text === '') continue
+    parts.push(text)
+    length += text.length + 3
+  }
+  return parts.join(' · ')
 }
 
 export function createEmptySheet(name: string, id: string): Sheet {

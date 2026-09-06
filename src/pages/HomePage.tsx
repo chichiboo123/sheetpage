@@ -110,6 +110,7 @@ export function HomePage() {
         canUndo={canUndo}
         onSelectSheet={actions.selectSheet}
         onShowOverview={actions.showOverview}
+        onSetSheetIcon={actions.setSheetIcon}
         onCommitCell={actions.setCell}
         onUndo={actions.undo}
         onRedo={actions.redo}

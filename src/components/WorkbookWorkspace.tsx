@@ -20,6 +20,7 @@ interface WorkbookWorkspaceProps {
   canUndo: boolean
   onSelectSheet: (sheetId: string) => void
   onShowOverview: () => void
+  onSetSheetIcon: (sheetId: string, icon: string | undefined) => void
   onCommitCell: (sheetId: string, r: number, c: number, input: string) => void
   onUndo: () => void
   onRedo: () => void
@@ -41,6 +42,7 @@ export function WorkbookWorkspace({
   canUndo,
   onSelectSheet,
   onShowOverview,
+  onSetSheetIcon,
   onCommitCell,
   onUndo,
   onRedo,
@@ -136,7 +138,12 @@ export function WorkbookWorkspace({
               onShowOverview={onShowOverview}
             />
           ) : (
-            <SheetOverview workbook={workbook} onSelect={onSelectSheet} />
+            <SheetOverview
+              workbook={workbook}
+              onSelect={onSelectSheet}
+              onSetIcon={onSetSheetIcon}
+              readOnly={readOnly}
+            />
           )}
           <ChichibooFooter />
         </div>

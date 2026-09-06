@@ -192,10 +192,16 @@ function SheetLink({ sheet, active, onSelect, ref }: SheetLinkProps) {
           : 'text-ink-700 hover:bg-ink-100 hover:text-ink-900'
       }`}
     >
-      <Icon
-        name={empty ? 'article' : 'table_chart'}
-        className={`shrink-0 text-[18px] ${active ? 'text-brand-600' : 'text-ink-400'}`}
-      />
+      {/* A sheet the user gave an icon keeps it everywhere it appears, so the
+          list and the contents page read as the same set of pages. */}
+      {sheet.metadata.icon ? (
+        <span className="shrink-0 text-[15px] leading-none">{sheet.metadata.icon}</span>
+      ) : (
+        <Icon
+          name={empty ? 'article' : 'table_chart'}
+          className={`shrink-0 text-[18px] ${active ? 'text-brand-600' : 'text-ink-400'}`}
+        />
+      )}
       <span className="min-w-0 flex-1 truncate">{sheet.sheetName}</span>
       {sheet.metadata.hidden && (
         <Icon name="visibility_off" className="shrink-0 text-[15px] text-ink-400" />
