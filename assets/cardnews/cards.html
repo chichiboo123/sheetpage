@@ -98,6 +98,46 @@
   .credit .k{font-size:33px;color:var(--ink-400);font-weight:600}
   .credit .v{font-size:39px;color:var(--ink-800);font-weight:700}
 
+  /* ---------- home screen mock (card 01) ---------- */
+  .home{display:flex;flex-direction:column;align-items:flex-start;padding:82px 90px}
+  .home .hlogo{display:flex;align-items:center;gap:18px;margin-bottom:64px}
+  .home .hlogo svg{width:58px;height:58px;display:block}
+  .home .hlogo span{font-size:42px;font-weight:800;letter-spacing:-.02em;color:var(--ink-900)}
+  .home h2{font-size:100px;font-weight:800;letter-spacing:-.03em;color:var(--ink-900);line-height:1.16}
+  .home .hsub{margin-top:28px;font-size:38px;color:var(--ink-500);line-height:1.5}
+  .drop{margin-top:64px;width:100%;border:4px dashed var(--ink-300);border-radius:18px;
+        padding:70px 40px;text-align:center}
+  .drop .di{width:70px;height:70px;margin:0 auto;color:var(--ink-400)}
+  .drop .dt{margin-top:22px;font-size:34px;color:var(--ink-600)}
+  .drop .db{margin-top:36px;display:inline-flex;height:100px;padding:0 52px;border-radius:14px;
+            background:var(--brand-600);color:#fff;font-size:40px;font-weight:700;align-items:center}
+  .drop .df{margin-top:28px;font-size:27px;color:var(--ink-400)}
+  .orline{margin:50px 0;display:flex;align-items:center;gap:26px;width:100%}
+  .orline .l{height:3px;flex:1;background:var(--ink-200)}
+  .orline .o{font-size:28px;color:var(--ink-400)}
+  .glabel{font-size:32px;font-weight:700;color:var(--ink-700);margin-bottom:18px}
+  .grow2{display:flex;gap:20px;width:100%}
+  .ginput{flex:1;height:104px;border:3px solid var(--ink-200);border-radius:14px;display:flex;
+          align-items:center;padding:0 28px;font-size:36px;color:var(--ink-400)}
+  .gbtn{height:104px;padding:0 44px;border:3px solid var(--ink-200);border-radius:14px;display:flex;
+        align-items:center;font-size:36px;font-weight:600;color:var(--ink-800)}
+  .ghint{margin-top:20px;font-size:27px;color:var(--ink-400)}
+
+  /* ---------- overview cards (card 04) ---------- */
+  .ovgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;flex:1}
+  .ovcard{border:3px solid var(--ink-200);border-radius:16px;padding:28px;background:#fff;
+          display:flex;flex-direction:column}
+  .ovcard.on{border-color:var(--brand-400,#55A47D)}
+  .ovtop{display:flex;align-items:baseline;gap:14px}
+  .ovtop .idx{font-size:24px;color:var(--ink-400);font-weight:600}
+  .ovtop .nm{font-size:34px;font-weight:700;color:var(--ink-900)}
+  .ovsize{margin-top:6px;font-size:24px;color:var(--ink-400)}
+  .ovprev{margin-top:22px;flex:1;border:3px solid var(--ink-100);border-radius:10px;
+          background:var(--ink-50);padding:16px 18px}
+  .ovprev .pl{display:flex;gap:18px;font-size:23px;line-height:1.9;color:var(--ink-500);white-space:nowrap;overflow:hidden}
+  .ovprev .pl.h{color:var(--ink-700);font-weight:700}
+  .ovprev .pl b{font-weight:400}
+
   /* ---------- philosophy split ---------- */
   .versus{display:flex;gap:36px;align-items:stretch;flex:1;min-height:0}
   .vcol{flex:1;display:flex;flex-direction:column;min-width:0}
@@ -109,66 +149,51 @@
 </head>
 <body>
 
-<!-- ==================== 01 표지 ==================== -->
+<!-- ==================== 01 표지 · 앱 첫 화면 ==================== -->
 <div class="card" id="c1">
-  <div class="pager"><b>01</b> / 05</div>
-  <div class="logo">
-    <svg viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#1F6B4A"/><rect x="7" y="8" width="18" height="16" rx="2" fill="#fff"/><rect x="7" y="8" width="18" height="4" fill="#8CC3A5"/><rect x="13" y="12" width="1.4" height="12" fill="#DCEDE3"/><rect x="19" y="12" width="1.4" height="12" fill="#DCEDE3"/><rect x="7" y="16" width="18" height="1.4" fill="#DCEDE3"/><rect x="7" y="20" width="18" height="1.4" fill="#DCEDE3"/></svg>
-    <span class="name">SheetPage</span>
-  </div>
+  <div class="pager"><b>01</b> / 06</div>
+  <div style="font-size:34px;font-weight:700;letter-spacing:.14em;color:var(--brand-600)">SHEETPAGE</div>
 
-  <div style="margin-top:96px">
-    <h1 class="big">Spreadsheet를<br/>Page처럼.</h1>
-    <p class="lead" style="margin-top:44px">
-      시트 탭을 넘기지 마세요.<br/>왼쪽 목차에서 고르면 됩니다.
-    </p>
-  </div>
-
-  <div class="win" style="margin-top:80px;flex:1">
-    <div class="bar">
-      <svg viewBox="0 0 32 32" style="width:40px;height:40px"><rect width="32" height="32" rx="7" fill="#1F6B4A"/><rect x="7" y="8" width="18" height="16" rx="2" fill="#fff"/><rect x="7" y="8" width="18" height="4" fill="#8CC3A5"/></svg>
-      <span class="t">교육뮤지컬 키워드별 작품 자료</span>
-      <span class="s">시트 10개</span>
-      <span class="pill gh" style="margin-left:auto">공유</span>
-      <span class="pill pri" style="margin-left:14px">다운로드</span>
+  <div class="win home" style="margin-top:44px;flex:1">
+    <div class="hlogo">
+      <svg viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#1F6B4A"/><rect x="7" y="8" width="18" height="16" rx="2" fill="#fff"/><rect x="7" y="8" width="18" height="4" fill="#8CC3A5"/><rect x="13" y="12" width="1.4" height="12" fill="#DCEDE3"/><rect x="19" y="12" width="1.4" height="12" fill="#DCEDE3"/><rect x="7" y="16" width="18" height="1.4" fill="#DCEDE3"/><rect x="7" y="20" width="18" height="1.4" fill="#DCEDE3"/></svg>
+      <span>SheetPage</span>
     </div>
-    <div class="bd">
-      <div class="side">
-        <div class="srch">시트 검색</div>
-        <div class="srow"><span class="d"></span>전체 시트</div>
-        <div class="srow"><span class="d"></span>개요</div>
-        <div class="srow"><span class="d"></span>우정</div>
-        <div class="srow on"><span class="d"></span>용기</div>
-        <div class="srow"><span class="d"></span>가족</div>
-        <div class="srow"><span class="d"></span>꿈 · 진로</div>
-        <div class="srow"><span class="d"></span>다양성</div>
-        <div class="srow"><span class="d"></span>공동체</div>
-        <div class="srow"><span class="d"></span>환경</div>
-        <div class="srow"><span class="d"></span>넘버 색인</div>
+
+    <h2>Spreadsheet를 Page처럼.</h2>
+    <p class="hsub">복잡한 Excel과 Google Sheets를 웹페이지처럼 편하게 탐색하세요.</p>
+
+    <div class="drop">
+      <svg class="di" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 3v4a1 1 0 0 0 1 1h4"/>
+        <path d="M5 8V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-3"/>
+        <path d="M12 18v-6"/><path d="M9.5 14.5 12 12l2.5 2.5"/>
+      </svg>
+      <p class="dt">파일을 여기에 끌어다 놓거나 아래 버튼을 눌러주세요.</p>
+      <div class="db">Excel 파일 열기</div>
+      <p class="df">.xlsx, .xlsm, .xls, .csv, .tsv, .txt</p>
+    </div>
+
+    <div class="orline"><span class="l"></span><span class="o">또는</span><span class="l"></span></div>
+
+    <div style="width:100%">
+      <div class="glabel">Google Sheets 열기</div>
+      <div class="grow2">
+        <div class="ginput">Google Sheets 링크 붙여넣기</div>
+        <div class="gbtn">불러오기</div>
       </div>
-      <div class="gridarea">
-        <div class="gr h"><div class="gc gn"></div><div class="gc" style="width:250px">뮤지컬</div><div class="gc" style="flex:1">시놉시스</div><div class="gc" style="width:290px">주요 넘버</div><div class="gc" style="width:300px">수업 아이디어</div></div>
-        <div class="gr"><div class="gc gn">1</div><div class="gc" style="width:250px"><span>마틸다</span></div><div class="gc" style="flex:1"><span>책과 상상으로 어른들의 부당함에 맞서는 소녀</span></div><div class="gc" style="width:290px"><span>Naughty</span></div><div class="gc" style="width:300px"><span>'조금 나쁜' 용기 장면 만들기</span></div></div>
-        <div class="gr"><div class="gc gn">2</div><div class="gc" style="width:250px"><span>위키드</span></div><div class="gc" style="flex:1"><span>초록 피부의 엘파바가 자기 목소리를 찾아가는 이야기</span></div><div class="gc" style="width:290px"><span>Defying Gravity</span></div><div class="gc" style="width:300px"><span>중력을 거스르는 선택 즉흥극</span></div></div>
-        <div class="gr"><div class="gc gn">3</div><div class="gc" style="width:250px"><span>빌리 엘리어트</span></div><div class="gc" style="flex:1"><span>탄광촌 소년이 발레를 선택하기까지</span></div><div class="gc" style="width:290px"><span>Electricity</span></div><div class="gc" style="width:300px"><span>몸으로 감정 표현하기 워크숍</span></div></div>
-        <div class="gr"><div class="gc gn">4</div><div class="gc" style="width:250px"><span>애니</span></div><div class="gc" style="flex:1"><span>고아원 소녀가 희망을 놓지 않는 이야기</span></div><div class="gc" style="width:290px"><span>Tomorrow</span></div><div class="gc" style="width:300px"><span>'내일' 가사 바꿔 쓰기</span></div></div>
-        <div class="gr"><div class="gc gn">5</div><div class="gc" style="width:250px"><span>레미제라블</span></div><div class="gc" style="flex:1"><span>각자의 신념을 지키며 살아가는 사람들의 이야기</span></div><div class="gc" style="width:290px"><span>Do You Hear the People Sing?</span></div><div class="gc" style="width:300px"><span>함께 부르는 합창 장면 구성</span></div></div>
-        <div class="gr"><div class="gc gn">6</div><div class="gc" style="width:250px"><span>웨스트 사이드 스토리</span></div><div class="gc" style="flex:1"><span>두 무리 사이에서 화해를 꿈꾸는 청춘들</span></div><div class="gc" style="width:290px"><span>Somewhere</span></div><div class="gc" style="width:300px"><span>갈등 조정 역할극</span></div></div>
-        <div class="gr"><div class="gc gn">7</div><div class="gc" style="width:250px"><span>스쿨 오브 락</span></div><div class="gc" style="flex:1"><span>아이들이 밴드를 만들며 자기 자리를 찾는 이야기</span></div><div class="gc" style="width:290px"><span>You're in the Band</span></div><div class="gc" style="width:300px"><span>역할 나눠 밴드 구성하기</span></div></div>
-        <div class="gr"><div class="gc gn">8</div><div class="gc" style="width:250px"><span>라이온 킹</span></div><div class="gc" style="flex:1"><span>도망쳤던 심바가 자기 자리로 돌아오기까지</span></div><div class="gc" style="width:290px"><span>Circle of Life</span></div><div class="gc" style="width:300px"><span>순환을 몸짓으로 표현하기</span></div></div>
-        <div class="gr"><div class="gc gn">9</div><div class="gc" style="width:250px"><span>사운드 오브 뮤직</span></div><div class="gc" style="flex:1"><span>노래를 통해 가족이 되어가는 사람들</span></div><div class="gc" style="width:290px"><span>Do-Re-Mi</span></div><div class="gc" style="width:300px"><span>계이름으로 짧은 노래 만들기</span></div></div>
-        <div class="gr"><div class="gc gn">10</div><div class="gc" style="width:250px"><span>오즈의 마법사</span></div><div class="gc" style="flex:1"><span>길 위에서 각자 필요한 것을 찾아가는 여정</span></div><div class="gc" style="width:290px"><span>Over the Rainbow</span></div><div class="gc" style="width:300px"><span>내가 찾고 싶은 것 이야기하기</span></div></div>
-        <div class="gr"><div class="gc gn">11</div><div class="gc" style="width:250px"><span>피터 팬</span></div><div class="gc" style="flex:1"><span>자라기를 미룬 아이와 자라기로 한 아이</span></div><div class="gc" style="width:290px"><span>I Won't Grow Up</span></div><div class="gc" style="width:300px"><span>자람에 대해 찬반 토론하기</span></div></div>
-        <div class="gr"><div class="gc gn">12</div><div class="gc" style="width:250px"><span>알라딘</span></div><div class="gc" style="flex:1"><span>자기를 속이지 않기로 결심한 소년</span></div><div class="gc" style="width:290px"><span>A Whole New World</span></div><div class="gc" style="width:300px"><span>새로운 세계 장면 그려보기</span></div></div>
-        <div class="gr"><div class="gc gn">13</div><div class="gc" style="width:250px"><span>찰리와 초콜릿 공장</span></div><div class="gc" style="flex:1"><span>끝까지 남는 것은 정직함이라는 이야기</span></div><div class="gc" style="width:290px"><span>Pure Imagination</span></div><div class="gc" style="width:300px"><span>상상으로 공간 만들기</span></div></div>
-      </div>
+      <p class="ghint">링크가 있는 모든 사용자에게 공개된 문서를 불러올 수 있습니다.</p>
     </div>
   </div>
+
+  <p class="lead" style="margin-top:46px;color:var(--ink-800);font-weight:600">
+    파일 하나만 올리면 됩니다. 설치도 로그인도 없습니다.
+  </p>
 </div>
 
 <!-- ==================== 02 문제인식 ==================== -->
 <div class="card" id="c2">
-  <div class="pager"><b>02</b> / 05</div>
+  <div class="pager"><b>02</b> / 06</div>
   <div class="eyebrow">Problem</div>
   <h1 style="margin-top:30px">자료는 잘 정리했는데,<br/>정작 <span style="color:var(--brand-600)">찾기가 어렵습니다.</span></h1>
   <p class="lead" style="margin-top:34px">키워드별로 탭을 나눌수록 하단 탭은 더 좁아집니다.</p>
@@ -198,11 +223,11 @@
 
 <!-- ==================== 03 개요 · 철학 ==================== -->
 <div class="card" id="c3">
-  <div class="pager"><b>03</b> / 05</div>
+  <div class="pager"><b>03</b> / 06</div>
   <div class="eyebrow">What it is</div>
-  <h1 style="margin-top:30px">시트는 탭이 아니라<br/><span style="color:var(--brand-600)">페이지</span>입니다.</h1>
+  <h1 style="margin-top:30px">찾아 헤매지 말고,<br/><span style="color:var(--brand-600)">한눈에 보고 고르세요.</span></h1>
   <p class="lead" style="margin-top:32px">
-    같은 파일을 열었을 뿐인데, 문서의 구조가 눈에 들어옵니다.
+    똑같은 파일입니다. 시트 목록을 어디에 두느냐가 다를 뿐입니다.
   </p>
 
   <div class="versus" style="margin-top:56px">
@@ -288,11 +313,83 @@
   </div>
 </div>
 
-<!-- ==================== 04 기능 ==================== -->
+<!-- ==================== 04 전체 시트 ==================== -->
 <div class="card" id="c4">
-  <div class="pager"><b>04</b> / 05</div>
+  <div class="pager"><b>04</b> / 06</div>
+  <div class="eyebrow">Overview</div>
+  <h1 style="margin-top:30px">열어보기 전에<br/><span style="color:var(--brand-600)">무엇이 들어 있는지</span> 압니다.</h1>
+  <p class="lead" style="margin-top:32px">
+    전체 시트 화면이 모든 시트를 목차처럼 펼쳐 보여줍니다.
+  </p>
+
+  <div class="win" style="margin-top:52px;flex:1;min-height:0">
+    <div class="bar">
+      <svg viewBox="0 0 32 32" style="width:40px;height:40px"><rect width="32" height="32" rx="7" fill="#1F6B4A"/><rect x="7" y="8" width="18" height="16" rx="2" fill="#fff"/><rect x="7" y="8" width="18" height="4" fill="#8CC3A5"/></svg>
+      <span class="t">교육뮤지컬 키워드별 작품 자료</span>
+      <span class="s">시트 10개</span>
+    </div>
+    <div class="bd">
+      <div class="side" style="width:268px;padding:16px">
+        <div class="srch" style="height:48px;font-size:22px;margin-bottom:12px">시트 검색</div>
+        <div class="srow on" style="height:46px;font-size:23px">전체 시트</div>
+        <div class="srow" style="height:46px;font-size:23px">개요</div>
+        <div class="srow" style="height:46px;font-size:23px">우정</div>
+        <div class="srow" style="height:46px;font-size:23px">용기</div>
+        <div class="srow" style="height:46px;font-size:23px">가족</div>
+        <div class="srow" style="height:46px;font-size:23px">꿈 · 진로</div>
+        <div class="srow" style="height:46px;font-size:23px">다양성</div>
+        <div class="srow" style="height:46px;font-size:23px">공동체</div>
+        <div class="srow" style="height:46px;font-size:23px">환경</div>
+      </div>
+      <div style="flex:1;min-width:0;padding:28px;background:var(--canvas);display:flex;flex-direction:column">
+        <div style="font-size:30px;font-weight:700;color:var(--ink-900)">교육뮤지컬 키워드별 작품 자료</div>
+        <div style="margin-top:6px;font-size:24px;color:var(--ink-500)">시트 10개 · 보려는 시트를 선택하세요.</div>
+        <div class="ovgrid" style="margin-top:26px">
+          <div class="ovcard">
+            <div class="ovtop"><span class="idx">01</span><span class="nm">개요</span></div>
+            <div class="ovsize">12행 · 4열</div>
+            <div class="ovprev"><div class="pl h"><span style="width:150px;overflow:hidden;text-overflow:ellipsis">키워드</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis">작품 수</span></div><div class="pl"><span style="width:150px;overflow:hidden;text-overflow:ellipsis">우정</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis">6편</span></div><div class="pl"><span style="width:150px;overflow:hidden;text-overflow:ellipsis">용기</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis">13편</span></div></div>
+          </div>
+          <div class="ovcard">
+            <div class="ovtop"><span class="idx">02</span><span class="nm">우정</span></div>
+            <div class="ovsize">9행 · 5열</div>
+            <div class="ovprev"><div class="pl h"><span style="width:150px;overflow:hidden;text-overflow:ellipsis">뮤지컬</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis">시놉시스</span></div><div class="pl"><span style="width:150px;overflow:hidden;text-overflow:ellipsis">위키드</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis">두 마녀가 서로를…</span></div><div class="pl"><span style="width:150px;overflow:hidden;text-overflow:ellipsis">애니</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis">고아원 소녀가…</span></div></div>
+          </div>
+          <div class="ovcard">
+            <div class="ovtop"><span class="idx">03</span><span class="nm">용기</span></div>
+            <div class="ovsize">14행 · 5열</div>
+            <div class="ovprev"><div class="pl h"><span style="width:150px;overflow:hidden;text-overflow:ellipsis">뮤지컬</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis">시놉시스</span></div><div class="pl"><span style="width:150px;overflow:hidden;text-overflow:ellipsis">마틸다</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis">책과 상상으로…</span></div><div class="pl"><span style="width:150px;overflow:hidden;text-overflow:ellipsis">위키드</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis">초록 피부의…</span></div></div>
+          </div>
+          <div class="ovcard">
+            <div class="ovtop"><span class="idx">04</span><span class="nm">가족</span></div>
+            <div class="ovsize">11행 · 5열</div>
+            <div class="ovprev"><div class="pl h"><span style="width:150px;overflow:hidden;text-overflow:ellipsis">뮤지컬</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis">시놉시스</span></div><div class="pl"><span style="width:150px;overflow:hidden;text-overflow:ellipsis">라이온 킹</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis">도망쳤던 심바가…</span></div><div class="pl"><span style="width:150px;overflow:hidden;text-overflow:ellipsis">사운드 오브…</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis">노래를 통해…</span></div></div>
+          </div>
+          <div class="ovcard">
+            <div class="ovtop"><span class="idx">05</span><span class="nm">꿈 · 진로</span></div>
+            <div class="ovsize">10행 · 5열</div>
+            <div class="ovprev"><div class="pl h"><span style="width:150px;overflow:hidden;text-overflow:ellipsis">뮤지컬</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis">시놉시스</span></div><div class="pl"><span style="width:150px;overflow:hidden;text-overflow:ellipsis">빌리 엘리어트</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis">탄광촌 소년이…</span></div><div class="pl"><span style="width:150px;overflow:hidden;text-overflow:ellipsis">스쿨 오브 락</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis">아이들이 밴드를…</span></div></div>
+          </div>
+          <div class="ovcard">
+            <div class="ovtop"><span class="idx">06</span><span class="nm">다양성</span></div>
+            <div class="ovsize">8행 · 5열</div>
+            <div class="ovprev"><div class="pl h"><span style="width:150px;overflow:hidden;text-overflow:ellipsis">뮤지컬</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis">시놉시스</span></div><div class="pl"><span style="width:150px;overflow:hidden;text-overflow:ellipsis">웨스트 사이드…</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis">두 무리 사이에서…</span></div><div class="pl"><span style="width:150px;overflow:hidden;text-overflow:ellipsis">코러스 라인</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis">무대에 서기 위해…</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="lead" style="margin-top:44px;color:var(--ink-800);font-weight:600">
+    탭을 하나씩 눌러보며 확인할 일이 없습니다.
+  </p>
+</div>
+
+<!-- ==================== 05 기능 ==================== -->
+<div class="card" id="c5">
+  <div class="pager"><b>05</b> / 06</div>
   <div class="eyebrow">Features</div>
-  <h1 style="margin-top:30px">탐색이 먼저,<br/>그다음이 편집입니다.</h1>
+  <h1 style="margin-top:30px">읽고, 고치고,<br/><span style="color:var(--brand-600)">그대로 돌려받습니다.</span></h1>
 
   <div class="rw" style="margin-top:64px;flex:1">
     <div class="rh"><div class="cn"></div><div class="cl">A</div><div class="cl">B</div></div>
@@ -320,18 +417,18 @@
 </div>
 
 <!-- ==================== 05 아웃트로 ==================== -->
-<div class="card" id="c5">
-  <div class="pager"><b>05</b> / 05</div>
+<div class="card" id="c6">
+  <div class="pager"><b>06</b> / 06</div>
   <div class="logo">
     <svg viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#1F6B4A"/><rect x="7" y="8" width="18" height="16" rx="2" fill="#fff"/><rect x="7" y="8" width="18" height="4" fill="#8CC3A5"/><rect x="13" y="12" width="1.4" height="12" fill="#DCEDE3"/><rect x="19" y="12" width="1.4" height="12" fill="#DCEDE3"/><rect x="7" y="16" width="18" height="1.4" fill="#DCEDE3"/><rect x="7" y="20" width="18" height="1.4" fill="#DCEDE3"/></svg>
     <span class="name">SheetPage</span>
   </div>
 
   <div style="margin-top:auto;margin-bottom:auto">
-    <h1 class="big">탭이 많을수록<br/>더 쉬워집니다.</h1>
+    <h1 class="big">그 파일,<br/>여기서 열어보세요.</h1>
     <p class="lead" style="margin-top:52px">
-      정리해두신 자료 파일 하나만 올려보세요.<br/>
-      시트가 페이지가 되는 순간을 바로 보실 수 있습니다.
+      탭이 많아 미뤄두었던 파일일수록<br/>
+      달라지는 게 바로 보입니다.
     </p>
     <div class="urlbox" style="margin-top:66px">
       <svg viewBox="0 0 24 24" style="width:44px;height:44px;fill:none;stroke:#1A573D;stroke-width:2.2;stroke-linecap:round">
