@@ -50,6 +50,7 @@ type Action =
   | { type: 'loading'; message: string }
   | { type: 'progress'; message: string }
   | { type: 'loaded'; workbook: Workbook; readOnly: boolean }
+  | { type: 'restored'; workbook: Workbook; activeSheetId: string | null; editCount: number }
   | { type: 'failed'; error: WorkbookError }
   | { type: 'reset' }
   | { type: 'selectSheet'; sheetId: string }
@@ -132,6 +133,21 @@ function reducer(state: WorkbookState, action: Action): WorkbookState {
         activeSheetId: first ? first.sheetId : null,
         status: 'ready',
         readOnly: action.readOnly,
+      }
+    }
+
+    // A restore differs from a load in one way: it returns to the sheet the
+    // user was reading, not to the first one.
+    case 'restored': {
+      const known = action.workbook.sheets.some((s) => s.sheetId === action.activeSheetId)
+      return {
+        ...initialWorkbookState,
+        workbook: action.workbook,
+        activeSheetId: known ? action.activeSheetId : (action.workbook.sheets[0]?.sheetId ?? null),
+        status: 'ready',
+        // Undo history is not carried across a reload, but the fact that the
+        // workbook was edited is.
+        editCount: action.editCount,
       }
     }
 
@@ -218,6 +234,8 @@ export function useWorkbookStore() {
       reportProgress: (message: string) => dispatch({ type: 'progress', message }),
       loaded: (workbook: Workbook, readOnly = false) =>
         dispatch({ type: 'loaded', workbook, readOnly }),
+      restored: (workbook: Workbook, activeSheetId: string | null, editCount: number) =>
+        dispatch({ type: 'restored', workbook, activeSheetId, editCount }),
       failed: (error: WorkbookError) => dispatch({ type: 'failed', error }),
       reset: () => dispatch({ type: 'reset' }),
       selectSheet: (sheetId: string) => dispatch({ type: 'selectSheet', sheetId }),

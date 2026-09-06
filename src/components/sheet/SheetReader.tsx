@@ -47,7 +47,9 @@ export function SheetReader({ sheet, headerRow }: SheetReaderProps) {
       <div className="mx-auto w-full max-w-5xl px-5 py-6 sm:px-8">
         {!asRecords && (
           <div
-            className="mb-2 grid gap-x-4 border-b-2 border-ink-300 pb-2"
+            // Pinned for the same reason as in the grid: column titles that
+            // scroll away make a long sheet unreadable after one screen.
+            className="sticky top-0 z-10 mb-2 grid gap-x-4 border-b-2 border-ink-300 bg-white pb-2 pt-1"
             style={{ gridTemplateColumns: `repeat(${Math.max(sheet.cols, 1)}, minmax(0, 1fr))` }}
           >
             {headers.map((label, c) => (

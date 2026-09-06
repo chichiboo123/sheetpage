@@ -22,7 +22,10 @@ import {
 import {
   columnAt,
   computeGeometry,
+  frozenRowCount,
   HEADER_HEIGHT,
+  MAX_RESIZED_WIDTH,
+  MIN_RESIZED_WIDTH,
   ROW_HEADER_WIDTH,
   ROW_HEIGHT,
 } from '@/lib/workbook/grid-geometry'
@@ -66,11 +69,14 @@ export function SheetGrid({
   const [scroll, setScroll] = useState({ top: 0, left: 0 })
   const [viewport, setViewport] = useState({ width: 0, height: 0 })
   const [editing, setEditing] = useState<{ r: number; c: number; draft: string } | null>(null)
+  const [widths, setWidths] = useState<Record<number, number>>({})
 
   // Column widths depend on the sheet's shape, not on its current values, so an
   // edit must not force the whole geometry to be measured again.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const geometry = useMemo(() => computeGeometry(sheet), [sheet.sheetId, sheet.cols, sheet.rows])
+  const geometry = useMemo(() => computeGeometry(sheet, widths), [sheet.sheetId, sheet.cols, sheet.rows, widths])
+
+  const frozenRows = useMemo(() => frozenRowCount(sheet, headerRow), [sheet, headerRow])
   const merges = useMemo(() => buildMergeLookup(sheet), [sheet.merges]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -103,6 +109,47 @@ export function SheetGrid({
     )
     return { startRow, endRow, startCol, endCol }
   }, [scroll, viewport, geometry, sheet.rows, sheet.cols])
+
+  const startResize = useCallback(
+    (column: number, event: React.MouseEvent) => {
+      event.preventDefault()
+      event.stopPropagation()
+      const startX = event.clientX
+      const startWidth = geometry.colWidths[column] ?? 0
+
+      const onMove = (move: MouseEvent) => {
+        const next = Math.round(
+          Math.min(
+            MAX_RESIZED_WIDTH,
+            Math.max(MIN_RESIZED_WIDTH, startWidth + (move.clientX - startX)),
+          ),
+        )
+        setWidths((current) => (current[column] === next ? current : { ...current, [column]: next }))
+      }
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove)
+        document.removeEventListener('mouseup', onUp)
+        document.body.style.cursor = ''
+        document.body.style.userSelect = ''
+      }
+
+      document.addEventListener('mousemove', onMove)
+      document.addEventListener('mouseup', onUp)
+      document.body.style.cursor = 'col-resize'
+      document.body.style.userSelect = 'none'
+    },
+    [geometry.colWidths],
+  )
+
+  /** Double-clicking the handle gives the column its computed width back. */
+  const resetWidth = useCallback((column: number) => {
+    setWidths((current) => {
+      if (!(column in current)) return current
+      const next = { ...current }
+      delete next[column]
+      return next
+    })
+  }, [])
 
   const scrollIntoView = useCallback(
     (r: number, c: number) => {
@@ -297,7 +344,9 @@ export function SheetGrid({
       ref={frameRef}
       tabIndex={0}
       role="grid"
-      aria-label={`${sheet.sheetName} 시트 · ${sheet.rows}행 ${sheet.cols}열`}
+      aria-label={`${sheet.sheetName} 시트`}
+      aria-rowcount={sheet.rows}
+      aria-colcount={sheet.cols}
       aria-readonly={readOnly || undefined}
       onKeyDown={onKeyDown}
       className="relative min-h-0 flex-1 bg-white focus:outline-none"
@@ -324,6 +373,18 @@ export function SheetGrid({
               style={{ left: geometry.colOffsets[c], width: geometry.colWidths[c] }}
             >
               {columnLabel(c)}
+              <span
+                role="separator"
+                aria-orientation="vertical"
+                aria-label={`${columnLabel(c)}열 너비 조절`}
+                onMouseDown={(event) => startResize(c, event)}
+                onDoubleClick={(event) => {
+                  event.stopPropagation()
+                  resetWidth(c)
+                }}
+                title="드래그해서 열 너비 조절 · 더블클릭하면 원래 너비로"
+                className="absolute right-0 top-0 z-10 h-full w-[7px] translate-x-[3px] cursor-col-resize hover:bg-brand-400/60"
+              />
             </div>
           ))}
         </div>
@@ -349,7 +410,70 @@ export function SheetGrid({
             </div>
           ))}
         </div>
+
+        {/* The gutter numbers for the pinned rows, so a frozen row 1 is not
+            labelled with whatever row happens to be scrolled underneath it. */}
+        {frozenRows > 0 && scroll.top > 0 && (
+          <div
+            aria-hidden="true"
+            className="absolute inset-x-0 top-0 border-b border-ink-300 bg-ink-50"
+            style={{ height: frozenRows * ROW_HEIGHT }}
+          >
+            {range(0, frozenRows - 1).map((r) => (
+              <div
+                key={r}
+                className="absolute left-0 flex w-full items-center justify-end border-b border-ink-200 pr-2 text-2xs tabular-nums text-ink-400"
+                style={{ top: r * ROW_HEIGHT, height: ROW_HEIGHT }}
+              >
+                {r + 1}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
+
+      {/* The pinned heading rows. Purely a reading aid — it is not interactive,
+          so selecting or editing always happens on the real row underneath and
+          there is no second copy of a cell to keep in sync. */}
+      {frozenRows > 0 && scroll.top > 0 && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute z-[18] overflow-hidden border-b border-ink-300 bg-white"
+          style={{
+            left: ROW_HEADER_WIDTH,
+            right: 0,
+            top: HEADER_HEIGHT,
+            height: frozenRows * ROW_HEIGHT,
+          }}
+        >
+          <div
+            className="relative h-full"
+            style={{ width: geometry.totalWidth, transform: `translateX(${-scroll.left}px)` }}
+          >
+            {range(win.startCol, win.endCol).map((c) =>
+              range(0, frozenRows - 1).map((r) => {
+                const cell = getCell(sheet, r, c)
+                return (
+                  <div
+                    key={`${r}:${c}`}
+                    className={`absolute flex items-center overflow-hidden border-b border-r border-ink-200 px-2 text-[13px] leading-tight ${
+                      headerRow && r === 0 ? 'bg-ink-50 font-semibold text-ink-900' : 'bg-white text-ink-800'
+                    } ${isNumericCell(cell) ? 'justify-end tabular-nums' : ''}`}
+                    style={{
+                      left: geometry.colOffsets[c],
+                      top: r * ROW_HEIGHT,
+                      width: geometry.colWidths[c],
+                      height: ROW_HEIGHT,
+                    }}
+                  >
+                    <span className="truncate">{displayValue(cell)}</span>
+                  </div>
+                )
+              }),
+            )}
+          </div>
+        </div>
+      )}
 
       <div
         ref={scrollerRef}
@@ -370,6 +494,7 @@ export function SheetGrid({
               numeric={cell.numeric}
               formula={cell.formula}
               isHeader={headerRow && cell.r === 0}
+              selected={selection?.r === cell.r && selection?.c === cell.c}
               left={geometry.colOffsets[cell.c]}
               width={geometry.colWidths[cell.c]}
               onSelect={onSelect}
@@ -388,6 +513,7 @@ export function SheetGrid({
                 numeric={isNumericCell(cell)}
                 formula={Boolean(cell?.f)}
                 isHeader={headerRow && merge.r === 0}
+                selected={selection?.r === merge.r && selection?.c === merge.c}
                 left={geometry.colOffsets[merge.c]}
                 width={merge.width}
                 height={merge.height}
@@ -442,6 +568,7 @@ interface GridCellProps {
   numeric: boolean
   formula: boolean
   isHeader: boolean
+  selected: boolean
   left: number
   width: number
   height?: number
@@ -457,6 +584,7 @@ const GridCell = memo(function GridCell({
   numeric,
   formula,
   isHeader,
+  selected,
   left,
   width,
   height,
@@ -467,6 +595,9 @@ const GridCell = memo(function GridCell({
   return (
     <div
       role="gridcell"
+      aria-rowindex={r + 1}
+      aria-colindex={c + 1}
+      aria-selected={selected || undefined}
       title={text.length > 24 ? text : undefined}
       onMouseDown={() => onSelect({ r, c })}
       onDoubleClick={() => onEdit(r, c)}

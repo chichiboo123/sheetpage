@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { HomeScreen } from '@/components/home/HomeScreen'
 import { LoadingState } from '@/components/states/LoadingState'
 import { ErrorState } from '@/components/states/ErrorState'
@@ -7,6 +7,8 @@ import { ChichibooFooter } from '@/components/ChichibooFooter'
 import { toWorkbookError, useWorkbookStore } from '@/hooks/use-workbook-store'
 import { importFile, SUPPORTED_EXTENSION_LABEL } from '@/lib/workbook/import/registry'
 import { importGoogleSheet } from '@/lib/google/client'
+import { clearSession, useSessionPersistence } from '@/hooks/use-session-persistence'
+import { mayHaveStoredWorkbook } from '@/lib/persistence/session-store'
 
 const GOOGLE_HINTS = [
   'Google Sheets에서 공유 > 일반 액세스를 "링크가 있는 모든 사용자"로 변경해주세요.',
@@ -19,6 +21,23 @@ const FILE_HINTS = [`지원하는 형식: ${SUPPORTED_EXTENSION_LABEL}`]
 /** Flow A and Flow B: open a spreadsheet, then work with it in place. */
 export function HomePage() {
   const { state, activeSheet, actions, canUndo } = useWorkbookStore()
+  // Reading the workbook back is asynchronous, so without this the start screen
+  // would flash for a moment before the restored file replaced it.
+  const [restoring, setRestoring] = useState(mayHaveStoredWorkbook)
+
+  useSessionPersistence({
+    workbook: state.workbook,
+    activeSheetId: state.activeSheetId,
+    editCount: state.editCount,
+    enabled: state.status === 'ready' && !state.readOnly,
+    onRestore: actions.restored,
+    onRestoreSettled: () => setRestoring(false),
+  })
+
+  const reset = useCallback(() => {
+    void clearSession()
+    actions.reset()
+  }, [actions])
 
   const openFile = useCallback(
     async (file: File) => {
@@ -44,6 +63,14 @@ export function HomePage() {
     [actions],
   )
 
+  if (restoring && state.status !== 'ready') {
+    return (
+      <Shell>
+        <LoadingState message="이전에 보던 Workbook을 여는 중…" />
+      </Shell>
+    )
+  }
+
   if (state.status === 'loading') {
     return (
       <Shell>
@@ -66,7 +93,7 @@ export function HomePage() {
                 : undefined
           }
           actionLabel="처음으로"
-          onAction={actions.reset}
+          onAction={reset}
         />
       </Shell>
     )
@@ -86,7 +113,7 @@ export function HomePage() {
         onCommitCell={actions.setCell}
         onUndo={actions.undo}
         onRedo={actions.redo}
-        onReset={actions.reset}
+        onReset={reset}
       />
     )
   }
