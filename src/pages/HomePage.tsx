@@ -111,6 +111,7 @@ export function HomePage() {
         onSelectSheet={actions.selectSheet}
         onShowOverview={actions.showOverview}
         onSetSheetIcon={actions.setSheetIcon}
+        onMoveSheet={actions.moveSheet}
         onCommitCell={actions.setCell}
         onUndo={actions.undo}
         onRedo={actions.redo}

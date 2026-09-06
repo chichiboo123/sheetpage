@@ -4,12 +4,14 @@
  * Runs in the parse worker alongside the importer so SheetJS stays in a single
  * lazily loaded chunk.
  *
- * What survives the round trip: sheet names, sheet order, cell values and their
- * types, number formats, formulas, merged ranges and column widths. Cell-level
- * styling (fonts, fills, borders, conditional formatting), charts, images,
- * pivot tables and macros are not represented in SheetPage's model and are
- * therefore not written back. That trade is deliberate: content and structure
- * are preserved exactly, decoration is not.
+ * What survives the round trip: sheet names, sheet order (including an order the
+ * user rearranged here), cell values and their types, number formats, formulas,
+ * merged ranges and column widths. Decoration does not: fonts, borders,
+ * conditional formatting, charts, images, pivot tables and macros are not in the
+ * model at all, and background fills — which the model does carry, so that a
+ * shaded sheet reads here the way it does in Excel — are display-only, because
+ * the bundled SheetJS build writes no cell styles. Content and structure are
+ * preserved exactly; appearance is not.
  */
 import * as XLSX from 'xlsx'
 import { parseCellKey, type Sheet, type Workbook } from '../model'

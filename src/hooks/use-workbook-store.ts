@@ -24,7 +24,9 @@ export interface WorkbookError {
   kind: 'unsupported' | 'too-large' | 'parse' | 'google' | 'share' | 'unknown'
 }
 
-interface EditEntry {
+/** One cell's value before and after a commit. */
+interface CellEdit {
+  kind: 'cell'
   sheetId: string
   key: string
   before: Cell | undefined
@@ -32,6 +34,16 @@ interface EditEntry {
   beforeRows: number
   beforeCols: number
 }
+
+/** One sheet's position before and after a reorder. */
+interface SheetMove {
+  kind: 'move'
+  sheetId: string
+  from: number
+  to: number
+}
+
+type HistoryEntry = CellEdit | SheetMove
 
 export interface WorkbookState {
   workbook: Workbook | null
@@ -42,8 +54,8 @@ export interface WorkbookState {
   /** True when the workbook came from a share link and must not be edited. */
   readOnly: boolean
   editCount: number
-  undoStack: EditEntry[]
-  redoStack: EditEntry[]
+  undoStack: HistoryEntry[]
+  redoStack: HistoryEntry[]
 }
 
 type Action =
@@ -60,6 +72,7 @@ type Action =
   | { type: 'redo' }
   | { type: 'rename'; title: string }
   | { type: 'setSheetIcon'; sheetId: string; icon: string | undefined }
+  | { type: 'moveSheet'; sheetId: string; to: number }
 
 export const initialWorkbookState: WorkbookState = {
   workbook: null,
@@ -81,6 +94,14 @@ function replaceSheet(workbook: Workbook, sheet: Sheet): Workbook {
   }
 }
 
+/** Reorder the sheet list, leaving every sheet's identity untouched. */
+function withSheetMoved(workbook: Workbook, from: number, to: number): Workbook {
+  const sheets = workbook.sheets.slice()
+  const [moved] = sheets.splice(from, 1)
+  sheets.splice(to, 0, moved)
+  return { ...workbook, sheets }
+}
+
 function withCell(sheet: Sheet, key: string, cell: Cell | undefined, r: number, c: number): Sheet {
   const cells = { ...sheet.cells }
   if (cell === undefined) delete cells[key]
@@ -93,23 +114,39 @@ function withCell(sheet: Sheet, key: string, cell: Cell | undefined, r: number, 
   }
 }
 
-function applyEntry(state: WorkbookState, entry: EditEntry, direction: 'undo' | 'redo'): WorkbookState {
+function applyEntry(
+  state: WorkbookState,
+  entry: HistoryEntry,
+  direction: 'undo' | 'redo',
+): WorkbookState {
   if (!state.workbook) return state
   const sheet = state.workbook.sheets.find((s) => s.sheetId === entry.sheetId)
   if (!sheet) return state
 
-  const [r, c] = entry.key.split(':').map(Number)
-  const target = direction === 'undo' ? entry.before : entry.after
+  let workbook: Workbook
+  // A move is undone by putting the sheet back where it started, which is the
+  // same operation with its ends swapped.
+  if (entry.kind === 'move') {
+    const at = state.workbook.sheets.findIndex((s) => s.sheetId === entry.sheetId)
+    if (at < 0) return state
+    workbook = withSheetMoved(state.workbook, at, direction === 'undo' ? entry.from : entry.to)
+  } else {
+    const [r, c] = entry.key.split(':').map(Number)
+    const target = direction === 'undo' ? entry.before : entry.after
 
-  let next = withCell(sheet, entry.key, target, r, c)
-  if (direction === 'undo') {
-    next = { ...next, rows: entry.beforeRows, cols: entry.beforeCols }
+    let next = withCell(sheet, entry.key, target, r, c)
+    if (direction === 'undo') {
+      next = { ...next, rows: entry.beforeRows, cols: entry.beforeCols }
+    }
+    workbook = replaceSheet(state.workbook, next)
   }
 
   return {
     ...state,
-    workbook: replaceSheet(state.workbook, next),
-    activeSheetId: entry.sheetId,
+    workbook,
+    // A reorder does not change what the reader is looking at, so it must not
+    // yank them onto the sheet that moved.
+    activeSheetId: entry.kind === 'move' ? state.activeSheetId : entry.sheetId,
     editCount: direction === 'undo' ? Math.max(0, state.editCount - 1) : state.editCount + 1,
     undoStack: direction === 'undo' ? state.undoStack.slice(0, -1) : [...state.undoStack, entry],
     redoStack: direction === 'undo' ? [...state.redoStack, entry] : state.redoStack.slice(0, -1),
@@ -179,7 +216,8 @@ function reducer(state: WorkbookState, action: Action): WorkbookState {
       // A no-op edit should not dirty the workbook or grow the undo stack.
       if (sameCell(before, after)) return state
 
-      const entry: EditEntry = {
+      const entry: CellEdit = {
+        kind: 'cell',
         sheetId: action.sheetId,
         key,
         before,
@@ -205,6 +243,26 @@ function reducer(state: WorkbookState, action: Action): WorkbookState {
     case 'redo': {
       const entry = state.redoStack.at(-1)
       return entry ? applyEntry(state, entry, 'redo') : state
+    }
+
+    // Sheet order is part of the file — the exported .xlsx puts the tabs in
+    // this order — so unlike an icon, moving a sheet really does modify the
+    // workbook and belongs in the undo history.
+    case 'moveSheet': {
+      if (!state.workbook || state.readOnly) return state
+      const from = state.workbook.sheets.findIndex((s) => s.sheetId === action.sheetId)
+      if (from < 0) return state
+      const to = Math.min(Math.max(0, action.to), state.workbook.sheets.length - 1)
+      if (to === from) return state
+
+      const entry: SheetMove = { kind: 'move', sheetId: action.sheetId, from, to }
+      return {
+        ...state,
+        workbook: withSheetMoved(state.workbook, from, to),
+        editCount: state.editCount + 1,
+        undoStack: [...state.undoStack, entry].slice(-UNDO_LIMIT),
+        redoStack: [],
+      }
     }
 
     // An icon is SheetPage's own decoration, not part of the file, so it must
@@ -261,6 +319,7 @@ export function useWorkbookStore() {
       rename: (title: string) => dispatch({ type: 'rename', title }),
       setSheetIcon: (sheetId: string, icon: string | undefined) =>
         dispatch({ type: 'setSheetIcon', sheetId, icon }),
+      moveSheet: (sheetId: string, to: number) => dispatch({ type: 'moveSheet', sheetId, to }),
     }),
     [],
   )

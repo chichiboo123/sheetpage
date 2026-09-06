@@ -1,6 +1,14 @@
 import { useMemo, useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { columnLabel, displayValue, getCell, isNumericCell, type Sheet } from '@/lib/workbook/model'
+import {
+  columnLabel,
+  displayValue,
+  fillAt,
+  getCell,
+  inkOn,
+  isNumericCell,
+  type Sheet,
+} from '@/lib/workbook/model'
 
 interface SheetReaderProps {
   sheet: Sheet
@@ -98,9 +106,19 @@ function TableRow({ sheet, r }: { sheet: Sheet; r: number }) {
       {Array.from({ length: sheet.cols }, (_, c) => {
         const cell = getCell(sheet, r, c)
         const text = displayValue(cell)
+        const fill = fillAt(sheet, cell, c)
         return (
           <div
             key={c}
+            // Padded when filled so the colour reads as a band rather than as
+            // text sitting on a stripe. Record mode deliberately drops fills:
+            // once a row is broken into labelled fields it is no longer a table,
+            // and a colour that meant "this column" no longer means anything.
+            style={
+              fill
+                ? { backgroundColor: fill, color: inkOn(fill), padding: '2px 6px', borderRadius: 3 }
+                : undefined
+            }
             className={`whitespace-pre-wrap break-words text-[14px] leading-relaxed ${
               isNumericCell(cell) ? 'tabular-nums text-ink-700' : 'text-ink-800'
             }`}

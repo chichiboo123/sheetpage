@@ -1,11 +1,13 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import {
   buildMergeLookup,
   cellKey,
   columnNames,
   detectHeaderRow,
   displayValue,
+  fillAt,
   getCell,
+  inkOn,
   isSheetEmpty,
   sheetSummary,
   type Sheet,
@@ -160,6 +162,7 @@ function PostCard({
   readOnly: boolean
 }) {
   const [picking, setPicking] = useState(false)
+  const iconRef = useRef<HTMLButtonElement>(null)
   const empty = isSheetEmpty(sheet)
   const headerRow = useMemo(() => detectHeaderRow(sheet), [sheet])
   const summary = useMemo(() => sheetSummary(sheet, headerRow), [sheet, headerRow])
@@ -187,16 +190,23 @@ function PostCard({
             <tbody>
               {Array.from({ length: rows }, (_, r) => (
                 <tr key={r}>
-                  {Array.from({ length: cols }, (_, c) => (
-                    <td
-                      key={c}
-                      className={`truncate px-1 py-px text-2xs ${
-                        headerRow && r === 0 ? 'font-medium text-ink-700' : 'text-ink-500'
-                      }`}
-                    >
-                      {merges.covered.has(cellKey(r, c)) ? '' : displayValue(getCell(sheet, r, c))}
-                    </td>
-                  ))}
+                  {Array.from({ length: cols }, (_, c) => {
+                    const cell = getCell(sheet, r, c)
+                    const fill = fillAt(sheet, cell, c)
+                    return (
+                      <td
+                        key={c}
+                        // The cover only reads as this sheet's cover if it is
+                        // coloured the way the sheet is.
+                        style={{ backgroundColor: fill, color: inkOn(fill) }}
+                        className={`truncate px-1 py-px text-2xs ${
+                          headerRow && r === 0 ? 'font-medium text-ink-700' : 'text-ink-500'
+                        }`}
+                      >
+                        {merges.covered.has(cellKey(r, c)) ? '' : displayValue(cell)}
+                      </td>
+                    )
+                  })}
                 </tr>
               ))}
             </tbody>
@@ -210,6 +220,7 @@ function PostCard({
             <span className="mt-px text-[19px] leading-none">{sheet.metadata.icon ?? autoIcon(sheet)}</span>
           ) : (
             <button
+              ref={iconRef}
               type="button"
               onClick={() => setPicking((open) => !open)}
               aria-label={`${sheet.sheetName} 아이콘 변경`}
@@ -240,6 +251,7 @@ function PostCard({
           {picking && (
             <SheetIconPicker
               current={sheet.metadata.icon}
+              anchor={iconRef}
               onPick={(icon) => onSetIcon(sheet.sheetId, icon)}
               onClose={() => setPicking(false)}
             />

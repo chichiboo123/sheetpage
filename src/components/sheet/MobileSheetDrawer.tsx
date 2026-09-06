@@ -9,6 +9,7 @@ interface MobileSheetDrawerProps {
   activeSheetId: string | null
   onSelect: (sheetId: string) => void
   onShowOverview: () => void
+  onMove?: (sheetId: string, to: number) => void
   onClose: () => void
 }
 
@@ -23,6 +24,7 @@ export function MobileSheetDrawer({
   activeSheetId,
   onSelect,
   onShowOverview,
+  onMove,
   onClose,
 }: MobileSheetDrawerProps) {
   useEffect(() => {
@@ -72,6 +74,7 @@ export function MobileSheetDrawer({
             onShowOverview()
             onClose()
           }}
+          onMove={onMove}
         />
       </div>
     </div>

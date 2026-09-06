@@ -107,7 +107,7 @@ export function convertArrayBuffer(data: ArrayBuffer, options: ConvertOptions): 
     options.onSheet?.(index, names.length, name)
     const ws = raw.Sheets[name]
     const hidden = raw.Workbook?.Sheets?.[index]?.Hidden
-    sheets.push(convertSheet(ws, name, hidden === 1 || hidden === 2))
+    sheets.push(convertSheet(ws, name, hidden === 1 || hidden === 2, raw))
   })
 
   return {
@@ -120,11 +120,17 @@ export function convertArrayBuffer(data: ArrayBuffer, options: ConvertOptions): 
   }
 }
 
-function convertSheet(ws: XLSX.WorkSheet | undefined, name: string, hidden: boolean): Sheet {
+function convertSheet(
+  ws: XLSX.WorkSheet | undefined,
+  name: string,
+  hidden: boolean,
+  raw: XLSX.WorkBook,
+): Sheet {
   const sheet = createEmptySheet(name, randomId(6))
   sheet.metadata.hidden = hidden || undefined
   if (!ws) return sheet
 
+  const palette = new Palette()
   const cells: Record<string, Cell> = {}
   let maxR = -1
   let maxC = -1
@@ -140,7 +146,7 @@ function convertSheet(ws: XLSX.WorkSheet | undefined, name: string, hidden: bool
     const address = XLSX.utils.decode_cell(key)
     if (!Number.isFinite(address.r) || !Number.isFinite(address.c)) continue
 
-    const converted = convertCell(ws[key] as XLSX.CellObject)
+    const converted = convertCell(ws[key] as XLSX.CellObject, palette)
     if (!converted) continue
 
     cells[cellKey(address.r, address.c)] = converted
@@ -166,7 +172,10 @@ function convertSheet(ws: XLSX.WorkSheet | undefined, name: string, hidden: bool
   const cols = ws['!cols']
   if (cols?.length) {
     sheet.metadata.colWidths = cols.map((col) => col?.wch ?? col?.width ?? 0)
+    const colFills = cols.map((col) => palette.index(columnFill(col, raw)))
+    if (colFills.some((index) => index !== null)) sheet.metadata.colFills = colFills
   }
+
   const frozen = ws['!freeze']
   if (typeof frozen === 'string') {
     try {
@@ -177,10 +186,12 @@ function convertSheet(ws: XLSX.WorkSheet | undefined, name: string, hidden: bool
     }
   }
 
+  if (palette.colours.length > 0) sheet.fills = palette.colours
+
   return sheet
 }
 
-function convertCell(source: XLSX.CellObject | undefined): Cell | undefined {
+function convertCell(source: XLSX.CellObject | undefined, palette: Palette): Cell | undefined {
   if (!source) return undefined
 
   const rawType = source.t as string | undefined
@@ -202,9 +213,14 @@ function convertCell(source: XLSX.CellObject | undefined): Cell | undefined {
     }
   }
 
-  if (value === null && !formula) return undefined
+  const bg = palette.index(solidFill(source.s))
+
+  // An empty cell that carries a fill is not nothing: it is a coloured band in
+  // a table, part of how the sheet reads. It is kept for the colour alone.
+  if (value === null && !formula && bg === null) return undefined
 
   const cell: Cell = { v: value }
+  if (bg !== null) cell.bg = bg
   if (formula) cell.f = formula
   if (rawType && !isStub) cell.t = rawType as CellType
   else if (formula) cell.t = 'n'
@@ -218,4 +234,76 @@ function convertCell(source: XLSX.CellObject | undefined): Cell | undefined {
 function stripExtension(fileName: string): string {
   const trimmed = fileName.replace(/\.[^./\\]+$/, '')
   return trimmed || fileName || '제목 없는 Workbook'
+}
+
+/* ------------------------------------------------------------------ */
+/* Fills                                                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The colours one sheet uses, interned.
+ *
+ * A shaded table paints the same few colours over thousands of cells, so cells
+ * store an index and the sheet stores the list. The cap is there so a file that
+ * gives every cell its own shade cannot turn the palette into a second copy of
+ * the sheet.
+ */
+const MAX_FILLS_PER_SHEET = 256
+
+class Palette {
+  readonly colours: string[] = []
+  private readonly seen = new Map<string, number>()
+
+  index(hex: string | undefined): number | null {
+    if (!hex) return null
+    const known = this.seen.get(hex)
+    if (known !== undefined) return known
+    if (this.colours.length >= MAX_FILLS_PER_SHEET) return null
+    const next = this.colours.push(hex) - 1
+    this.seen.set(hex, next)
+    return next
+  }
+}
+
+interface SheetJsFill {
+  patternType?: string
+  fgColor?: { rgb?: string; theme?: number; tint?: number }
+}
+
+/**
+ * `#rrggbb` for a solid fill, or nothing.
+ *
+ * SheetJS resolves a theme colour and its tint into `rgb` for us, so both a
+ * hand-picked colour and one of Excel's theme shades arrive the same way. The
+ * one form it drops is the legacy `indexed` palette, which it hands back as an
+ * empty colour — those cells stay uncoloured rather than being guessed at.
+ */
+function solidFill(style: unknown): string | undefined {
+  const fill = style as SheetJsFill | undefined
+  if (!fill || fill.patternType !== 'solid') return undefined
+  const rgb = fill.fgColor?.rgb
+  if (typeof rgb !== 'string') return undefined
+
+  // Excel writes ARGB; the alpha is always opaque in a fill and is dropped.
+  const hex = (rgb.length === 8 ? rgb.slice(2) : rgb).toLowerCase()
+  if (!/^[0-9a-f]{6}$/.test(hex)) return undefined
+  // White is the grid's own background — recording it would grow the model
+  // without changing a single pixel.
+  if (hex === 'ffffff') return undefined
+  return `#${hex}`
+}
+
+interface SheetJsStyles {
+  CellXf?: { fillId?: number }[]
+  Fills?: unknown[]
+}
+
+/** The fill a `<col>` applies to its whole column, resolved through cellXfs. */
+function columnFill(col: XLSX.ColInfo | undefined, raw: XLSX.WorkBook): string | undefined {
+  const style = (col as { style?: string | number } | undefined)?.style
+  if (style == null) return undefined
+  const styles = (raw as { Styles?: SheetJsStyles }).Styles
+  const fillId = styles?.CellXf?.[Number(style)]?.fillId
+  if (fillId == null) return undefined
+  return solidFill(styles?.Fills?.[fillId])
 }

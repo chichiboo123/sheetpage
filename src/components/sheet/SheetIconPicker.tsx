@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type RefObject } from 'react'
+import { createPortal } from 'react-dom'
 import { Icon } from '@/components/ui/Icon'
 
 /**
@@ -15,16 +16,55 @@ const PRESETS = [
   '🏫', '👥', '🌱', '🌍', '❤️', '✨', '🔥', '🧩',
 ]
 
+const PANEL_WIDTH = 268
+/** Breathing room kept between the panel and the edge of the window. */
+const MARGIN = 8
+
 interface SheetIconPickerProps {
   current: string | undefined
+  /** The control the panel points at. Its position decides where the panel opens. */
+  anchor: RefObject<HTMLElement | null>
   onPick: (icon: string | undefined) => void
   onClose: () => void
 }
 
-export function SheetIconPicker({ current, onPick, onClose }: SheetIconPickerProps) {
+/**
+ * The icon chooser.
+ *
+ * It renders into `document.body` rather than beside the button that opens it,
+ * because the button lives inside a card that clips its own overflow — a panel
+ * positioned inside that card gets cut off at the card's edge. Being in the
+ * body means the panel is placed against the window instead, and it flips above
+ * or slides left rather than opening off-screen.
+ */
+export function SheetIconPicker({ current, anchor, onPick, onClose }: SheetIconPickerProps) {
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    const place = () => {
+      const panel = ref.current
+      const target = anchor.current
+      if (!panel || !target) return
+      const rect = target.getBoundingClientRect()
+      const height = panel.offsetHeight
+
+      const left = Math.max(
+        MARGIN,
+        Math.min(rect.left, window.innerWidth - PANEL_WIDTH - MARGIN),
+      )
+      // Below the button by default; above it when there is no room below.
+      const below = rect.bottom + 4
+      const top =
+        below + height > window.innerHeight - MARGIN
+          ? Math.max(MARGIN, rect.top - height - 4)
+          : below
+
+      panel.style.left = `${Math.round(left)}px`
+      panel.style.top = `${Math.round(top)}px`
+      panel.style.visibility = 'visible'
+    }
+
+    place()
     const onPointerDown = (event: MouseEvent) => {
       if (!ref.current?.contains(event.target as Node)) onClose()
     }
@@ -34,19 +74,27 @@ export function SheetIconPicker({ current, onPick, onClose }: SheetIconPickerPro
     // Deferred so the click that opened the picker does not immediately close it.
     const timer = window.setTimeout(() => document.addEventListener('mousedown', onPointerDown))
     document.addEventListener('keydown', onKeyDown)
+    window.addEventListener('resize', place)
+    // Capture, so the panel follows the button when any scroller moves it.
+    window.addEventListener('scroll', place, true)
     return () => {
       window.clearTimeout(timer)
       document.removeEventListener('mousedown', onPointerDown)
       document.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('resize', place)
+      window.removeEventListener('scroll', place, true)
     }
-  }, [onClose])
+  }, [anchor, onClose])
 
-  return (
+  return createPortal(
     <div
       ref={ref}
       role="dialog"
       aria-label="시트 아이콘 선택"
-      className="absolute left-0 top-full z-30 mt-1 w-[268px] rounded-lg border border-ink-200 bg-white p-2 shadow-pop"
+      // Hidden for the first frame: it is measured before it is placed, and a
+      // panel that appears at 0,0 and then jumps reads as a glitch.
+      style={{ width: PANEL_WIDTH, visibility: 'hidden' }}
+      className="fixed left-0 top-0 z-50 rounded-lg border border-ink-200 bg-white p-2 shadow-pop"
     >
       <div className="grid grid-cols-8 gap-0.5">
         {PRESETS.map((emoji) => (
@@ -81,6 +129,7 @@ export function SheetIconPicker({ current, onPick, onClose }: SheetIconPickerPro
           아이콘 지우기
         </button>
       )}
-    </div>
+    </div>,
+    document.body,
   )
 }

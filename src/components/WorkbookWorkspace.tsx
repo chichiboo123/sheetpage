@@ -21,6 +21,8 @@ interface WorkbookWorkspaceProps {
   onSelectSheet: (sheetId: string) => void
   onShowOverview: () => void
   onSetSheetIcon: (sheetId: string, icon: string | undefined) => void
+  /** Moves a sheet to a new position in the workbook's tab order. */
+  onMoveSheet: (sheetId: string, to: number) => void
   onCommitCell: (sheetId: string, r: number, c: number, input: string) => void
   onUndo: () => void
   onRedo: () => void
@@ -43,6 +45,7 @@ export function WorkbookWorkspace({
   onSelectSheet,
   onShowOverview,
   onSetSheetIcon,
+  onMoveSheet,
   onCommitCell,
   onUndo,
   onRedo,
@@ -120,6 +123,7 @@ export function WorkbookWorkspace({
           activeSheetId={activeSheetId}
           onSelect={onSelectSheet}
           onShowOverview={onShowOverview}
+          onMove={readOnly ? undefined : onMoveSheet}
           collapsed={collapsed}
           onToggleCollapsed={() => setCollapsed((value) => !value)}
         />
@@ -155,6 +159,7 @@ export function WorkbookWorkspace({
         activeSheetId={activeSheetId}
         onSelect={onSelectSheet}
         onShowOverview={onShowOverview}
+        onMove={readOnly ? undefined : onMoveSheet}
         onClose={() => setDrawerOpen(false)}
       />
 

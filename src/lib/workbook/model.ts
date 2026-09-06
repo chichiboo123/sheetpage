@@ -26,6 +26,12 @@ export interface Cell {
   z?: string
   /** Pre-formatted text as the source rendered it. Used for display only. */
   w?: string
+  /**
+   * Index into `Sheet.fills` — the background colour the source painted on this
+   * cell. Stored as an index rather than a colour because a shaded table repeats
+   * the same handful of colours across thousands of cells.
+   */
+  bg?: number
 }
 
 export interface CellRange {
@@ -46,6 +52,11 @@ export interface SheetMetadata {
    * share snapshots carry it because they keep the whole model.
    */
   icon?: string
+  /**
+   * Background fill index per column, for a column the file colours as a whole
+   * rather than cell by cell. `null` where the column carries no fill.
+   */
+  colFills?: (number | null)[]
 }
 
 export interface Sheet {
@@ -59,6 +70,11 @@ export interface Sheet {
   cells: Record<string, Cell>
   merges: CellRange[]
   metadata: SheetMetadata
+  /**
+   * The distinct background colours this sheet uses, as `#rrggbb`. Cells and
+   * columns point in by index; absent when the sheet has no colouring at all.
+   */
+  fills?: string[]
 }
 
 export type WorkbookSourceType = 'xlsx' | 'xls' | 'csv' | 'google-sheets' | 'shared'
@@ -133,6 +149,41 @@ export function editValue(cell: Cell | undefined): string {
 
 export function isNumericCell(cell: Cell | undefined): boolean {
   return cell?.t === 'n' || typeof cell?.v === 'number'
+}
+
+/* ------------------------------------------------------------------ */
+/* Fills                                                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The background colour to paint behind a cell, or nothing when the source
+ * left it plain.
+ *
+ * A column-level fill only reaches the gaps: a position the file has no cell
+ * for at all. Where a cell exists, its own fill is the answer even when that
+ * answer is "none" — colouring a column in Excel stamps the colour onto the
+ * cells as well, so a cell that arrives without one was deliberately left
+ * plain, and inheriting the column's colour there would paint over the author.
+ */
+export function fillAt(sheet: Sheet, cell: Cell | undefined, c: number): string | undefined {
+  const palette = sheet.fills
+  if (!palette || palette.length === 0) return undefined
+  const index = cell ? (cell.bg ?? null) : (sheet.metadata.colFills?.[c] ?? null)
+  return index == null ? undefined : palette[index]
+}
+
+/**
+ * Text colour that stays readable on `hex`, or nothing when the cell's normal
+ * ink already works. A dark header fill is common enough — a green or navy
+ * title row — that leaving near-black text on it would make the row unreadable.
+ */
+export function inkOn(hex: string | undefined): string | undefined {
+  if (!hex) return undefined
+  const n = Number.parseInt(hex.slice(1), 16)
+  if (!Number.isFinite(n)) return undefined
+  // Rec. 601 luma is close enough for a legibility switch and needs no gamma.
+  const luma = (((n >> 16) & 255) * 299 + ((n >> 8) & 255) * 587 + (n & 255) * 114) / 255000
+  return luma < 0.55 ? '#ffffff' : undefined
 }
 
 /**

@@ -15,7 +15,9 @@ import {
   columnLabel,
   displayValue,
   editValue,
+  fillAt,
   getCell,
+  inkOn,
   isNumericCell,
   type Sheet,
 } from '@/lib/workbook/model'
@@ -302,18 +304,29 @@ export function SheetGrid({
   }, [merges, win, geometry, sheet.cols])
 
   const cells = useMemo(() => {
-    const nodes: { r: number; c: number; text: string; numeric: boolean; formula: boolean }[] = []
+    const nodes: {
+      r: number
+      c: number
+      text: string
+      numeric: boolean
+      formula: boolean
+      fill?: string
+      ink?: string
+    }[] = []
     for (let r = win.startRow; r <= win.endRow; r++) {
       for (let c = win.startCol; c <= win.endCol; c++) {
         const key = cellKey(r, c)
         if (merges.covered.has(key) || merges.anchors.has(key)) continue
         const cell = sheet.cells[key]
+        const fill = fillAt(sheet, cell, c)
         nodes.push({
           r,
           c,
           text: displayValue(cell),
           numeric: isNumericCell(cell),
           formula: Boolean(cell?.f),
+          fill,
+          ink: inkOn(fill),
         })
       }
     }
@@ -453,6 +466,7 @@ export function SheetGrid({
             {range(win.startCol, win.endCol).map((c) =>
               range(0, frozenRows - 1).map((r) => {
                 const cell = getCell(sheet, r, c)
+                const fill = fillAt(sheet, cell, c)
                 return (
                   <div
                     key={`${r}:${c}`}
@@ -464,6 +478,8 @@ export function SheetGrid({
                       top: r * ROW_HEIGHT,
                       width: geometry.colWidths[c],
                       height: ROW_HEIGHT,
+                      backgroundColor: fill,
+                      color: inkOn(fill),
                     }}
                   >
                     <span className="truncate">{displayValue(cell)}</span>
@@ -493,6 +509,8 @@ export function SheetGrid({
               text={cell.text}
               numeric={cell.numeric}
               formula={cell.formula}
+              fill={cell.fill}
+              ink={cell.ink}
               isHeader={headerRow && cell.r === 0}
               selected={selection?.r === cell.r && selection?.c === cell.c}
               left={geometry.colOffsets[cell.c]}
@@ -504,6 +522,7 @@ export function SheetGrid({
 
           {visibleMerges.map((merge) => {
             const cell = getCell(sheet, merge.r, merge.c)
+            const fill = fillAt(sheet, cell, merge.c)
             return (
               <GridCell
                 key={`m-${merge.key}`}
@@ -512,6 +531,8 @@ export function SheetGrid({
                 text={displayValue(cell)}
                 numeric={isNumericCell(cell)}
                 formula={Boolean(cell?.f)}
+                fill={fill}
+                ink={inkOn(fill)}
                 isHeader={headerRow && merge.r === 0}
                 selected={selection?.r === merge.r && selection?.c === merge.c}
                 left={geometry.colOffsets[merge.c]}
@@ -567,6 +588,10 @@ interface GridCellProps {
   text: string
   numeric: boolean
   formula: boolean
+  /** `#rrggbb` the source painted behind this cell, if any. */
+  fill?: string
+  /** Text colour that survives that fill; undefined keeps the normal ink. */
+  ink?: string
   isHeader: boolean
   selected: boolean
   left: number
@@ -583,6 +608,8 @@ const GridCell = memo(function GridCell({
   text,
   numeric,
   formula,
+  fill,
+  ink,
   isHeader,
   selected,
   left,
@@ -606,7 +633,18 @@ const GridCell = memo(function GridCell({
       } ${isHeader ? 'bg-ink-50 font-semibold text-ink-900' : 'text-ink-800'} ${
         numeric && !merged ? 'justify-end tabular-nums' : ''
       } ${formula ? 'text-brand-800' : ''}`}
-      style={{ left, top: r * ROW_HEIGHT, width, height: height ?? ROW_HEIGHT }}
+      // The file's own colouring is a layer above the grid's defaults: an
+      // inline background beats the header and merge classes below it, which is
+      // the right precedence — those are SheetPage's guesses, this is the
+      // author's decision.
+      style={{
+        left,
+        top: r * ROW_HEIGHT,
+        width,
+        height: height ?? ROW_HEIGHT,
+        backgroundColor: fill,
+        color: ink,
+      }}
     >
       <span className="truncate">{text}</span>
     </div>
