@@ -55,7 +55,7 @@ export function HomeScreen({ onFile, onGoogleSheet }: HomeScreenProps) {
           Spreadsheet를 Page처럼.
         </h1>
         <p className="mt-3 text-[15px] leading-relaxed text-ink-500 sm:text-base">
-          복잡한 Excel과 Google Sheets를 웹페이지처럼 편하게 탐색하세요.
+          복잡한 Excel과 Google Sheets를 웹페이지처럼 편하게 탐색해보세요.
         </p>
 
         <div
